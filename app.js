@@ -171,12 +171,15 @@ const Utils = {
 const Permissions = {
     // Check if current role has permission
     can(permission) {
-        const role = MockData.roles[App.currentRole];
+        const roleId = (App.currentRole && MockData.roles[App.currentRole])
+            ? App.currentRole
+            : App.currentUser?.role;
+        const role = MockData.roles[roleId];
         if (!role) return false;
         const perm = role.permissions[permission];
         if (perm === 'conditional') {
             // Handle conditional permissions
-            if (permission === 'adminUsers' && App.currentRole === 'partner_admin') {
+            if (permission === 'adminUsers' && roleId === 'partner_admin') {
                 const company = this.getCurrentCompany();
                 return company?.enablePartnerUserAdmin || false;
             }
@@ -718,8 +721,25 @@ const Router = {
         'new-contract': { template: 'newContractPageTemplate', requiresAuth: true, title: 'Оформление', permission: 'create' },
         'contracts': { template: 'contractsPageTemplate', requiresAuth: true, title: 'Договоры' },
         'reports': { template: 'reportsPageTemplate', requiresAuth: true, title: 'Отчёты', permission: 'reports' },
-        'admin': { template: 'adminPageTemplate', requiresAuth: true, title: 'Админ', permission: 'adminUsers' },
+        'admin': { template: 'adminPageTemplate', requiresAuth: true, title: 'Админ', permission: 'adminUsers', anyPermissions: ['adminUsers', 'adminBlanks', 'adminSettings'] },
         'test-lab': { template: 'testLabPageTemplate', requiresAuth: true, title: 'Test Lab' }
+    },
+
+    canAccessRoute(routeName) {
+        const route = this.routes[routeName];
+        if (!route) return false;
+
+        if (route.requiresAuth && !App.currentUser) return false;
+
+        if (Array.isArray(route.anyPermissions) && route.anyPermissions.length > 0) {
+            return route.anyPermissions.some(permission => Permissions.can(permission));
+        }
+
+        if (route.permission) {
+            return Permissions.can(route.permission);
+        }
+
+        return true;
     },
 
     init() {
@@ -745,7 +765,7 @@ const Router = {
             return;
         }
 
-        if (route.permission && !Permissions.can(route.permission)) {
+        if (!this.canAccessRoute(hash)) {
             Toast.error('Нет доступа к этому разделу');
             this.navigate('dashboard');
             return;
@@ -784,25 +804,11 @@ const Router = {
 
     updateNav(current) {
         document.querySelectorAll('[data-nav]').forEach(link => {
-            link.classList.toggle('active', link.dataset.nav === current);
+            const routeName = link.dataset.nav;
+            const isVisible = this.canAccessRoute(routeName);
+            link.classList.toggle('hidden', !isVisible);
+            link.classList.toggle('active', isVisible && routeName === current);
         });
-
-        // Role-based menu visibility
-        const role = MockData.roles[App.currentRole];
-        const perms = role?.permissions || {};
-
-        // New Contract - requires create permission
-        const canCreate = perms.create === true;
-        document.querySelector('[data-nav="new-contract"]')?.classList.toggle('hidden', !canCreate);
-
-        // Reports - requires reports permission
-        const canReports = perms.reports === true;
-        document.querySelector('[data-nav="reports"]')?.classList.toggle('hidden', !canReports);
-
-        // Admin - requires adminUsers or adminBlanks
-        const showAdmin = perms.adminUsers === true || perms.adminUsers === 'conditional' || perms.adminBlanks === true;
-        document.getElementById('navAdmin')?.classList.toggle('hidden', !showAdmin);
-        document.getElementById('sidebarAdmin')?.classList.toggle('hidden', !showAdmin);
     }
 };
 
@@ -2001,14 +2007,57 @@ const Pages = {
     // ADMIN PAGE
     'admin': {
         init() {
+            this.setupTabs();
             this.renderUsers();
             this.renderBlanks();
             this.bindEvents();
+            this.openDefaultTab();
+        },
+
+        setupTabs() {
+            const canUsers = Permissions.can('adminUsers');
+            const canBlanks = Permissions.can('adminBlanks');
+            const canSettings = Permissions.can('adminSettings');
+
+            document.querySelector('[data-admin-tab="users"]')?.classList.toggle('hidden', !canUsers);
+            document.querySelector('[data-admin-tab="blanks"]')?.classList.toggle('hidden', !canBlanks);
+            document.querySelector('[data-admin-tab="settings"]')?.classList.toggle('hidden', !canSettings);
+        },
+
+        openAdminTab(tab) {
+            document.querySelectorAll('[data-admin-tab]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.adminTab === tab);
+            });
+
+            document.getElementById('adminUsersTab')?.classList.toggle('hidden', tab !== 'users');
+            document.getElementById('adminBlanksTab')?.classList.toggle('hidden', tab !== 'blanks');
+            document.getElementById('adminSettingsTab')?.classList.toggle('hidden', tab !== 'settings');
+        },
+
+        openDefaultTab() {
+            if (Permissions.can('adminUsers')) {
+                this.openAdminTab('users');
+                return;
+            }
+            if (Permissions.can('adminBlanks')) {
+                this.openAdminTab('blanks');
+                return;
+            }
+            if (Permissions.can('adminSettings')) {
+                this.openAdminTab('settings');
+            }
         },
 
         renderUsers() {
+            if (!Permissions.can('adminUsers')) {
+                document.querySelector('[data-admin-tab="users"]')?.classList.add('hidden');
+                document.getElementById('adminUsersTab')?.classList.add('hidden');
+                return;
+            }
+
             const users = Permissions.filterUsersByScope(MockData.users);
             const tbody = document.getElementById('adminUsersTable');
+            if (!tbody) return;
 
             tbody.innerHTML = users.map(u => {
                 const role = MockData.roles[u.role];
@@ -2032,6 +2081,7 @@ const Pages = {
         renderBlanks() {
             if (!Permissions.can('adminBlanks')) {
                 document.querySelector('[data-admin-tab="blanks"]')?.classList.add('hidden');
+                document.getElementById('adminBlanksTab')?.classList.add('hidden');
                 return;
             }
 
@@ -2068,13 +2118,7 @@ const Pages = {
             document.querySelectorAll('[data-admin-tab]').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const tab = e.target.dataset.adminTab;
-
-                    document.querySelectorAll('[data-admin-tab]').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-
-                    document.getElementById('adminUsersTab')?.classList.toggle('hidden', tab !== 'users');
-                    document.getElementById('adminBlanksTab')?.classList.toggle('hidden', tab !== 'blanks');
-                    document.getElementById('adminSettingsTab')?.classList.toggle('hidden', tab !== 'settings');
+                    this.openAdminTab(tab);
                 });
             });
 
