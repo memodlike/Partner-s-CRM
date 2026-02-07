@@ -2341,8 +2341,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('sidebarToggle')?.addEventListener('click', () => {
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.querySelector('.main-content');
-        sidebar?.classList.toggle('collapsed');
-        mainContent?.classList.toggle('sidebar-collapsed');
+        const isCollapsed = sidebar?.classList.toggle('collapsed');
+        mainContent?.classList.toggle('sidebar-collapsed', !!isCollapsed);
+
+        const toggleButton = document.getElementById('sidebarToggle');
+        if (toggleButton) {
+            const label = isCollapsed ? 'Развернуть меню' : 'Свернуть меню';
+            toggleButton.setAttribute('aria-label', label);
+            toggleButton.setAttribute('title', label);
+            toggleButton.setAttribute('aria-expanded', String(!isCollapsed));
+        }
     });
 
     document.getElementById('logoutBtn')?.addEventListener('click', () => {

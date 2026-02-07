@@ -397,6 +397,15 @@ textarea:focus-visible {
     margin-bottom: var(--space-5);
 }
 
+.sidebar-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: 0 var(--space-1);
+    margin-bottom: var(--space-2);
+}
+
 .sidebar-section-title {
     font-size: 11px;
     font-weight: var(--font-weight-semibold);
@@ -404,8 +413,20 @@ textarea:focus-visible {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     padding: var(--space-2) var(--space-3);
+    margin-bottom: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-section>#sidebarMenuTitle,
+#sidebarMenuTitle {
+    max-width: 120px;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: opacity 0.2s ease, transform 0.2s ease, max-width 0.22s ease, padding 0.22s ease;
+}
+
+.sidebar-section>.sidebar-section-title {
     margin-bottom: var(--space-2);
-    transition: opacity 0.2s ease;
 }
 
 .sidebar-menu {
@@ -425,7 +446,7 @@ textarea:focus-visible {
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
-    transition: all 0.15s ease;
+    transition: background-color 0.18s ease, color 0.18s ease;
 }
 
 .sidebar-link:hover {
@@ -444,15 +465,18 @@ textarea:focus-visible {
     height: 20px;
     flex-shrink: 0;
     opacity: 0.65;
-    transition: opacity 0.15s ease;
+    transform-origin: center;
+    transition: opacity 0.2s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .sidebar-link:hover .sidebar-link-icon {
     opacity: 0.85;
+    transform: scale(1.06);
 }
 
 .sidebar-link.active .sidebar-link-icon {
     opacity: 1;
+    transform: scale(1.04);
 }
 
 /* Sidebar Link Text */
@@ -467,27 +491,24 @@ textarea:focus-visible {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    margin-top: auto;
-    margin-left: auto;
-    margin-right: auto;
+    width: 28px;
+    height: 28px;
     background: transparent;
     border: none;
     border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: transform 0.2s ease;
 }
 
 .sidebar-toggle:hover {
-    background: var(--color-bg-secondary);
+    transform: translateX(1px);
 }
 
 .sidebar-toggle-icon {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     color: var(--color-text-tertiary);
-    transition: transform 0.25s ease, color 0.15s ease;
+    transition: transform 0.25s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
 .sidebar-toggle:hover .sidebar-toggle-icon {
@@ -496,20 +517,21 @@ textarea:focus-visible {
 
 /* ========== COLLAPSED STATE ========== */
 .sidebar.collapsed {
-    width: 68px;
-    padding: var(--space-3);
+    width: 76px;
+    padding: var(--space-4);
 }
 
 .sidebar.collapsed .sidebar-toggle-icon {
     transform: rotate(180deg);
 }
 
-.sidebar.collapsed .sidebar-section-title {
+.sidebar.collapsed #sidebarMenuTitle {
     opacity: 0;
-    height: 0;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
+    transform: translateX(-4px);
+    max-width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    pointer-events: none;
 }
 
 .sidebar.collapsed .sidebar-link-text {
@@ -528,17 +550,21 @@ textarea:focus-visible {
     width: 44px;
     height: 44px;
     padding: 0;
-    margin: 0 auto;
+    margin: 0;
     gap: 0;
 }
 
 .sidebar.collapsed .sidebar-menu {
-    align-items: center;
+    align-items: flex-start;
 }
 
 /* Adjust main content when sidebar is collapsed */
 .main-content.sidebar-collapsed {
-    margin-left: 68px;
+    margin-left: 76px;
+}
+
+.sidebar.collapsed .sidebar-link-icon {
+    transform: scale(0.98);
 }
 
 /* =============================================================================
@@ -820,6 +846,41 @@ textarea:focus-visible {
     align-items: start;
 }
 
+.contract-form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.contract-block {
+    border-radius: calc(var(--radius-xl) + 4px);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+}
+
+.contract-block-product {
+    position: relative;
+}
+
+.contract-block-details {
+    position: relative;
+}
+
+.contract-divider {
+    height: 1px;
+    margin: var(--space-6) 0;
+    background: var(--color-divider);
+}
+
+.contract-block .form-input,
+.contract-block .form-select,
+.contract-block .form-textarea,
+.contract-block .btn,
+.contract-block .badge,
+.contract-block .product-option {
+    border-radius: var(--radius-lg);
+}
+
 .product-picker {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -833,7 +894,7 @@ textarea:focus-visible {
     align-items: flex-start;
     min-height: 118px;
     padding: var(--space-4);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     border: 1px solid var(--color-border);
     background: var(--color-surface);
     overflow: hidden;
@@ -894,7 +955,7 @@ textarea:focus-visible {
 .product-option-icon {
     width: 48px;
     height: 48px;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     display: inline-flex;
@@ -1987,7 +2048,7 @@ textarea:focus-visible {
     background: var(--color-surface);
     backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-base);
+    border-radius: calc(var(--radius-xl) + 4px);
     padding: var(--space-5);
 }
 

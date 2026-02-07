@@ -107,7 +107,14 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar" role="complementary" aria-label="Боковая панель">
             <div class="sidebar-section">
-                <div class="sidebar-section-title">Меню</div>
+                <div class="sidebar-section-header">
+                    <div class="sidebar-section-title" id="sidebarMenuTitle">Меню</div>
+                    <button class="sidebar-toggle" id="sidebarToggle" title="Свернуть меню" aria-label="Свернуть меню" aria-expanded="true">
+                        <svg class="sidebar-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6" />
+                        </svg>
+                    </button>
+                </div>
                 <nav class="sidebar-menu" aria-label="Боковое меню">
                     <a href="#/dashboard" class="sidebar-link" data-nav="dashboard">
                         <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -177,13 +184,6 @@
                     <div class="badge badge-primary mt-4" id="roleInfoScope">Scope: company</div>
                 </div>
             </div>
-
-            <!-- Toggle Button at Bottom -->
-            <button class="sidebar-toggle" id="sidebarToggle" title="Свернуть/Развернуть меню">
-                <svg class="sidebar-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="15 18 9 12 15 6" />
-                </svg>
-            </button>
         </aside>
 
         <!-- Main Content Area -->
@@ -348,45 +348,51 @@
             <!-- Contract Form + Review Panel Layout -->
             <div class="contract-layout">
                 <!-- Main Form -->
-                <div class="card">
-                    <!-- Step 1: Product Selection -->
-                    <div class="form-section" id="stepProduct">
-                        <h3 class="card-title mb-5">Выбор продукта</h3>
-                        <div class="form-group">
-                            <label class="form-label required">Продукт</label>
-                            <div class="product-picker" id="productPicker" role="listbox" aria-label="Выбор продукта">
-                                <!-- Product cards are rendered by JS -->
+                <div class="contract-form-stack">
+                    <div class="card contract-block contract-block-product">
+                        <div class="form-section" id="stepProduct">
+                            <h3 class="card-title mb-5">Выбор продукта</h3>
+                            <div class="form-group">
+                                <label class="form-label required">Продукт</label>
+                                <div class="product-picker" id="productPicker" role="listbox" aria-label="Выбор продукта">
+                                    <!-- Product cards are rendered by JS -->
+                                </div>
+                                <div class="form-helper" id="productPickerHint">Выбран продукт: ВЗР</div>
                             </div>
-                            <div class="form-helper" id="productPickerHint">Выбран продукт: ВЗР</div>
-                        </div>
-
-                        <div class="form-group" id="generalContractGroup">
-                            <label class="form-label required">Генеральный договор</label>
-                            <select class="form-select" id="generalContractSelect">
-                                <!-- Populated by JS -->
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label required">Тип бланка</label>
-                            <select class="form-select" id="blankTypeSelect">
-                                <option value="electronic">Электронный полис</option>
-                                <option value="paper">Бумажный бланк</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group hidden" id="paperBlankGroup">
-                            <label class="form-label required">Бумажный бланк</label>
-                            <select class="form-select" id="paperBlankSelect">
-                                <!-- Populated by JS -->
-                            </select>
                         </div>
                     </div>
 
-                    <hr style="border: none; border-top: 1px solid var(--color-divider); margin: var(--space-6) 0;">
+                    <div class="card contract-block contract-block-details">
+                        <div class="form-section" id="stepDetails">
+                            <h3 class="card-title mb-5">Данные оформления</h3>
 
-                    <!-- Step 2: Coverage Details -->
-                    <div class="form-section" id="stepCoverage">
+                            <div class="form-group" id="generalContractGroup">
+                                <label class="form-label required">Генеральный договор</label>
+                                <select class="form-select" id="generalContractSelect">
+                                    <!-- Populated by JS -->
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required">Тип бланка</label>
+                                <select class="form-select" id="blankTypeSelect">
+                                    <option value="electronic">Электронный полис</option>
+                                    <option value="paper">Бумажный бланк</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group hidden" id="paperBlankGroup">
+                                <label class="form-label required">Бумажный бланк</label>
+                                <select class="form-select" id="paperBlankSelect">
+                                    <!-- Populated by JS -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="contract-divider"></div>
+
+                        <!-- Step 2: Coverage Details -->
+                        <div class="form-section" id="stepCoverage">
                         <h3 class="card-title mb-5">Параметры страхования</h3>
 
                         <!-- Territories -->
@@ -461,12 +467,12 @@
                                 <input type="number" class="form-input" id="daysCount" min="1" placeholder="Напр. 7">
                             </div>
                         </div>
-                    </div>
+                        </div>
 
-                    <hr style="border: none; border-top: 1px solid var(--color-divider); margin: var(--space-6) 0;">
+                        <div class="contract-divider"></div>
 
-                    <!-- Step 3: Insured Persons -->
-                    <div class="form-section" id="stepPersons">
+                        <!-- Step 3: Insured Persons -->
+                        <div class="form-section" id="stepPersons">
                         <h3 class="card-title mb-5">Застрахованные лица <span class="text-secondary font-normal"
                                 id="personsCounter">(0 / 5)</span></h3>
 
@@ -501,27 +507,28 @@
                             </div>
                             <div class="form-helper">Используется для тарификации без ввода ИИН и паспортных данных.</div>
                         </div>
-                    </div>
+                        </div>
 
-                    <!-- Actions -->
-                    <div class="flex justify-between items-center gap-4 mt-8 pt-7"
-                        style="border-top: 1px solid var(--color-divider);">
-                        <button type="button" class="btn btn-secondary" id="saveDraftBtn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                                <polyline points="17 21 17 13 7 13 7 21" />
-                                <polyline points="7 3 7 8 15 8" />
-                            </svg>
-                            Сохранить черновик
-                        </button>
-                        <button type="button" class="btn btn-primary btn-lg" id="activateBtn" disabled>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                            Активировать
-                        </button>
+                        <!-- Actions -->
+                        <div class="flex justify-between items-center gap-4 mt-8 pt-7"
+                            style="border-top: 1px solid var(--color-divider);">
+                            <button type="button" class="btn btn-secondary" id="saveDraftBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                                    <polyline points="17 21 17 13 7 13 7 21" />
+                                    <polyline points="7 3 7 8 15 8" />
+                                </svg>
+                                Сохранить черновик
+                            </button>
+                            <button type="button" class="btn btn-primary btn-lg" id="activateBtn" disabled>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                Активировать
+                            </button>
+                        </div>
                     </div>
                 </div>
 
