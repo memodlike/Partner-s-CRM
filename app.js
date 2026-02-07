@@ -786,6 +786,7 @@ const Router = {
 
         main.innerHTML = '';
         main.appendChild(template.content.cloneNode(true));
+        this.applyPageTransition(main.firstElementChild);
 
         // Show/hide sidebar and navbar based on route
         if (routeName === 'login') {
@@ -800,6 +801,14 @@ const Router = {
 
         // Initialize page-specific logic
         Pages[routeName]?.init?.();
+    },
+
+    applyPageTransition(pageRoot) {
+        if (!pageRoot) return;
+        pageRoot.classList.remove('page-transition-enter');
+        // Force reflow to reliably restart animation on every route change.
+        void pageRoot.offsetWidth;
+        pageRoot.classList.add('page-transition-enter');
     },
 
     updateNav(current) {
