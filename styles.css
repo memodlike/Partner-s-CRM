@@ -37,11 +37,14 @@
     --space-10: 64px;
 
     /* Border Radius */
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-base: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-base: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --radius-control: 14px;
+    --radius-surface: 22px;
+    --radius-overlay: 24px;
     --radius-full: 9999px;
 
     /* Transitions */
@@ -330,7 +333,7 @@ textarea:focus-visible {
     width: 32px;
     height: 32px;
     background: linear-gradient(135deg, var(--color-primary), #5856d6);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -347,7 +350,7 @@ textarea:focus-visible {
 
 .nav-link {
     padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-control);
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
@@ -442,7 +445,7 @@ textarea:focus-visible {
     gap: var(--space-3);
     height: 44px;
     padding: 0 var(--space-3);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-control);
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
@@ -495,7 +498,7 @@ textarea:focus-visible {
     height: 28px;
     background: transparent;
     border: none;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-control);
     cursor: pointer;
     transition: transform 0.2s ease;
 }
@@ -576,7 +579,7 @@ textarea:focus-visible {
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-surface);
     padding: var(--space-6);
     box-shadow: var(--shadow-sm);
     transition: all var(--transition-base);
@@ -657,7 +660,7 @@ textarea:focus-visible {
     justify-content: center;
     gap: var(--space-2);
     padding: var(--space-3) var(--space-5);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-control);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
     transition: all var(--transition-fast);
@@ -772,7 +775,7 @@ textarea:focus-visible {
     padding: var(--space-3) var(--space-4);
     background: var(--color-bg);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-control);
     font-size: var(--font-size-base);
     color: var(--color-text-primary);
     transition: all var(--transition-fast);
@@ -853,7 +856,7 @@ textarea:focus-visible {
 }
 
 .contract-block {
-    border-radius: calc(var(--radius-xl) + 4px);
+    border-radius: var(--radius-surface);
     border: 1px solid var(--color-border);
     box-shadow: var(--shadow-sm);
 }
@@ -876,9 +879,12 @@ textarea:focus-visible {
 .contract-block .form-select,
 .contract-block .form-textarea,
 .contract-block .btn,
-.contract-block .badge,
+.contract-block .badge {
+    border-radius: var(--radius-control);
+}
+
 .contract-block .product-option {
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-surface);
 }
 
 .product-picker {
@@ -894,7 +900,7 @@ textarea:focus-visible {
     align-items: flex-start;
     min-height: 118px;
     padding: var(--space-4);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-surface);
     border: 1px solid var(--color-border);
     background: var(--color-surface);
     overflow: hidden;
@@ -955,7 +961,7 @@ textarea:focus-visible {
 .product-option-icon {
     width: 48px;
     height: 48px;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-control);
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     display: inline-flex;
@@ -1120,7 +1126,7 @@ textarea:focus-visible {
 .table-container {
     overflow-x: auto;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-surface);
     background: var(--color-surface);
 }
 
@@ -1231,7 +1237,7 @@ textarea:focus-visible {
     padding: var(--space-1) var(--space-2);
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-control);
     font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
 }
@@ -1280,7 +1286,7 @@ textarea:focus-visible {
     background: var(--color-surface-elevated);
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-overlay);
     box-shadow: var(--shadow-xl);
     max-width: 520px;
     width: calc(100% - var(--space-8));
@@ -1317,7 +1323,7 @@ textarea:focus-visible {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-control);
     color: var(--color-text-tertiary);
     transition: all var(--transition-fast);
 }
@@ -1368,6 +1374,7 @@ textarea:focus-visible {
     background: var(--color-surface-elevated);
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     border-left: 1px solid var(--color-border);
+    border-radius: var(--radius-overlay) 0 0 var(--radius-overlay);
     box-shadow: var(--shadow-xl);
     z-index: var(--z-modal);
     transform: translateX(100%);
@@ -1418,7 +1425,7 @@ textarea:focus-visible {
     padding: var(--space-4) var(--space-5);
     background: var(--color-toast-bg);
     border: 1px solid var(--color-toast-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-overlay);
     box-shadow:
         0 6px 18px var(--color-toast-shadow),
         0 18px 36px rgba(0, 0, 0, 0.12);
@@ -1456,7 +1463,7 @@ textarea:focus-visible {
     left: 0;
     height: 3px;
     background: var(--color-primary);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    border-radius: 0 0 var(--radius-overlay) var(--radius-overlay);
     animation: toastProgress var(--toast-duration, 4s) linear forwards;
 }
 
@@ -1554,7 +1561,7 @@ textarea:focus-visible {
     gap: var(--space-4);
     padding: var(--space-2) var(--space-4);
     background: var(--color-bg-secondary);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-control);
     border: 1px solid var(--color-border);
 }
 
@@ -1581,7 +1588,7 @@ textarea:focus-visible {
     font-weight: var(--font-weight-medium);
     font-size: 10px;
     padding: 2px 6px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-control);
     font-variant-numeric: tabular-nums;
 }
 
@@ -1629,7 +1636,7 @@ textarea:focus-visible {
     padding: var(--space-2) var(--space-3);
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-control);
     font-size: var(--font-size-sm);
     color: var(--color-text-primary);
     cursor: pointer;
@@ -1656,7 +1663,7 @@ textarea:focus-visible {
     width: 320px;
     background: var(--color-bg);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-overlay);
     box-shadow:
         0 4px 12px rgba(0, 0, 0, 0.1),
         0 12px 28px rgba(0, 0, 0, 0.15);
@@ -1723,7 +1730,7 @@ textarea:focus-visible {
     justify-content: center;
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-control);
     color: var(--color-text-secondary);
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -1747,7 +1754,7 @@ textarea:focus-visible {
     background: var(--color-surface);
     backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-surface);
     padding: var(--space-5);
     margin-bottom: var(--space-5);
 }
@@ -1875,7 +1882,7 @@ textarea:focus-visible {
     background: linear-gradient(90deg, var(--color-bg-secondary) 25%, var(--color-bg-tertiary) 50%, var(--color-bg-secondary) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-control);
 }
 
 @keyframes shimmer {
@@ -2048,7 +2055,7 @@ textarea:focus-visible {
     background: var(--color-surface);
     backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--color-border);
-    border-radius: calc(var(--radius-xl) + 4px);
+    border-radius: var(--radius-surface);
     padding: var(--space-5);
 }
 
@@ -2096,7 +2103,7 @@ textarea:focus-visible {
 
 .test-results {
     background: var(--color-bg-secondary);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-surface);
     padding: var(--space-4);
     max-height: 400px;
     overflow-y: auto;
@@ -2147,7 +2154,7 @@ textarea:focus-visible {
 
 .integration-log {
     background: var(--color-bg-secondary);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-surface);
     overflow: hidden;
 }
 
@@ -2181,7 +2188,7 @@ textarea:focus-visible {
 .integration-log-payload {
     background: var(--color-bg-tertiary);
     padding: var(--space-3);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-control);
     font-family: var(--font-family-mono);
     font-size: var(--font-size-xs);
     overflow-x: auto;
@@ -2208,7 +2215,7 @@ textarea:focus-visible {
     background: var(--color-surface);
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-overlay);
     padding: var(--space-8);
     box-shadow: var(--shadow-lg);
 }
@@ -2222,7 +2229,7 @@ textarea:focus-visible {
     width: 64px;
     height: 64px;
     background: linear-gradient(135deg, var(--color-primary), #5856d6);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-surface);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2257,7 +2264,7 @@ textarea:focus-visible {
     padding: var(--space-4);
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-surface);
     margin-bottom: var(--space-3);
 }
 
@@ -2305,7 +2312,7 @@ textarea:focus-visible {
     padding: var(--space-4);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-surface);
     margin-bottom: var(--space-5);
 }
 
