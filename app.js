@@ -715,7 +715,7 @@ const Router = {
     routes: {
         'login': { template: 'loginPageTemplate', requiresAuth: false, title: 'Вход' },
         'dashboard': { template: 'dashboardPageTemplate', requiresAuth: true, title: 'Сводка' },
-        'new-contract': { template: 'newContractPageTemplate', requiresAuth: true, title: 'Создание договора / сертификата', permission: 'create' },
+        'new-contract': { template: 'newContractPageTemplate', requiresAuth: true, title: 'Оформление', permission: 'create' },
         'contracts': { template: 'contractsPageTemplate', requiresAuth: true, title: 'Договоры' },
         'reports': { template: 'reportsPageTemplate', requiresAuth: true, title: 'Отчёты', permission: 'reports' },
         'admin': { template: 'adminPageTemplate', requiresAuth: true, title: 'Админ', permission: 'adminUsers' },
@@ -1166,11 +1166,8 @@ const Pages = {
                     <div class="product-option-content">
                         <div class="product-option-head">
                             <span class="product-option-code">${product.code || product.shortName || product.id}</span>
-                            ${product.recommended ? '<span class="product-option-badge">Быстрый выбор</span>' : ''}
                         </div>
                         <div class="product-option-name">${Utils.escapeHtml(product.name || product.id)}</div>
-                        <div class="product-option-desc">${Utils.escapeHtml(product.description || '')}</div>
-                        <div class="product-option-audience">${Utils.escapeHtml(product.audience || '')}</div>
                     </div>
                     <div class="product-option-check" aria-hidden="true">✓</div>
                 </button>
@@ -1179,7 +1176,7 @@ const Pages = {
             const hint = document.getElementById('productPickerHint');
             if (hint) {
                 hint.textContent = activeProduct.available
-                    ? `Выбран продукт: ${activeProduct.code} — ${activeProduct.name}`
+                    ? `Выбран продукт: ${activeProduct.code}`
                     : 'Для выбранного продукта нет доступного генерального договора';
             }
         },

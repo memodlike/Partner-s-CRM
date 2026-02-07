@@ -831,7 +831,7 @@ textarea:focus-visible {
     display: flex;
     gap: var(--space-4);
     align-items: flex-start;
-    min-height: 128px;
+    min-height: 118px;
     padding: var(--space-4);
     border-radius: var(--radius-lg);
     border: 1px solid var(--color-border);
@@ -851,11 +851,11 @@ textarea:focus-visible {
 }
 
 .product-option.theme-ocean::before {
-    background: linear-gradient(125deg, #0071e3 0%, #5e5ce6 100%);
+    background: linear-gradient(125deg, #2d8cff 0%, #4f7dff 48%, #59a7ff 100%);
 }
 
 .product-option.theme-sunset::before {
-    background: linear-gradient(125deg, #ff9500 0%, #ff375f 100%);
+    background: linear-gradient(125deg, #ffd665 0%, #7de280 44%, #57c59b 100%);
 }
 
 .product-option:hover {
@@ -882,6 +882,7 @@ textarea:focus-visible {
 .product-option.active {
     border-color: var(--color-primary);
     box-shadow: 0 0 0 1px rgba(0, 113, 227, 0.35), var(--shadow-md);
+    animation: productSelectedPulse 260ms ease;
 }
 
 .product-option.active .product-option-check {
@@ -891,16 +892,18 @@ textarea:focus-visible {
 }
 
 .product-option-icon {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border-radius: var(--radius-md);
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 24px;
+    line-height: 1;
     flex-shrink: 0;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .product-option-content {
@@ -916,26 +919,19 @@ textarea:focus-visible {
 }
 
 .product-option-code {
-    font-size: var(--font-size-xs);
+    font-size: 20px;
     font-weight: var(--font-weight-semibold);
     color: var(--color-primary);
+    letter-spacing: 0.02em;
 }
 
 .product-option-name {
-    font-size: var(--font-size-base);
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: -0.01em;
-}
-
-.product-option-desc {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-2);
-}
-
-.product-option-audience {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-tertiary);
+    font-size: 24px;
+    line-height: 1.12;
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary);
+    overflow-wrap: anywhere;
 }
 
 .product-option-check {
@@ -971,6 +967,41 @@ textarea:focus-visible {
 .product-specific-fields.switching {
     opacity: 0.65;
     transform: translateY(4px);
+}
+
+.product-option.active .product-option-icon {
+    transform: scale(1.06);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] .product-option {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(180deg, rgba(28, 28, 30, 0.94), rgba(28, 28, 30, 0.88));
+}
+
+[data-theme="dark"] .product-option::before {
+    opacity: 0.22;
+}
+
+[data-theme="dark"] .product-option.theme-ocean::before {
+    background: linear-gradient(125deg, #1f69ff 0%, #2f7bff 52%, #1f97ff 100%);
+}
+
+[data-theme="dark"] .product-option.theme-sunset::before {
+    background: linear-gradient(125deg, #c8b942 0%, #4fbf62 48%, #2ea874 100%);
+}
+
+[data-theme="dark"] .product-option-icon {
+    background: rgba(44, 44, 46, 0.94);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+[data-theme="dark"] .product-option-name {
+    color: #f5f5f7;
+}
+
+[data-theme="dark"] .product-option-code {
+    color: #78a7ff;
 }
 
 /* Toggle Switch */
@@ -2278,6 +2309,20 @@ textarea:focus-visible {
     }
 }
 
+@keyframes productSelectedPulse {
+    0% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-1px) scale(1.01);
+    }
+
+    100% {
+        transform: translateY(0) scale(1);
+    }
+}
+
 .animate-fade-in {
     animation: fadeIn var(--transition-base) ease forwards;
 }
@@ -2344,7 +2389,11 @@ textarea:focus-visible {
         padding: var(--space-3);
     }
 
-    .product-option-desc {
-        font-size: var(--font-size-xs);
+    .product-option-code {
+        font-size: 18px;
+    }
+
+    .product-option-name {
+        font-size: 20px;
     }
 }
