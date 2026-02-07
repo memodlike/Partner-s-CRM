@@ -89,6 +89,26 @@ const Utils = {
         return new Date().toISOString().split('T')[0];
     },
 
+    // Add days to ISO date and return ISO date
+    addDays(dateStr, days) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        d.setDate(d.getDate() + days);
+        return d.toISOString().split('T')[0];
+    },
+
+    // Age in full years by date of birth
+    getAge(birthDate) {
+        if (!birthDate) return null;
+        const birth = new Date(birthDate);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
+        const dayDiff = today.getDate() - birth.getDate();
+        if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) age--;
+        return age;
+    },
+
     // Generate unique ID
     generateId(prefix = 'id') {
         return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -593,7 +613,7 @@ const Router = {
     routes: {
         'login': { template: 'loginPageTemplate', requiresAuth: false, title: 'Вход' },
         'dashboard': { template: 'dashboardPageTemplate', requiresAuth: true, title: 'Сводка' },
-        'new-contract': { template: 'newContractPageTemplate', requiresAuth: true, title: 'Новый договор', permission: 'create' },
+        'new-contract': { template: 'newContractPageTemplate', requiresAuth: true, title: 'Создание договора/сертификата ВЗР', permission: 'create' },
         'contracts': { template: 'contractsPageTemplate', requiresAuth: true, title: 'Договоры' },
         'reports': { template: 'reportsPageTemplate', requiresAuth: true, title: 'Отчёты', permission: 'reports' },
         'admin': { template: 'adminPageTemplate', requiresAuth: true, title: 'Админ', permission: 'adminUsers' },
@@ -984,10 +1004,13 @@ const Pages = {
             this.resetForm();
             this.populateSelects();
             this.bindEvents();
+            this.updateDaysFromDates();
             this.updateReview();
         },
 
         resetForm() {
+            const tomorrow = Utils.getTomorrow();
+            const defaultEnd = Utils.addDays(tomorrow, 6);
             App.contractForm = {
                 id: Utils.generateId('cnt'),
                 externalId: Utils.generateId('ext'),
@@ -1000,12 +1023,29 @@ const Pages = {
                 variant: 'standard',
                 purpose: 'tourism',
                 amount: 30000,
-                startDate: Utils.getTomorrow(),
-                endDate: '',
+                amountCurrency: 'USD',
+                startDate: tomorrow,
+                endDate: defaultEnd,
                 persons: [],
-                kdpConfirmed: false
+                kdpConfirmed: false,
+                issueDate: Utils.getToday()
             };
-            document.getElementById('startDate').value = Utils.getTomorrow();
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            const minStartDate = Utils.getTomorrow();
+
+            if (startDateInput) {
+                startDateInput.min = minStartDate;
+                startDateInput.value = tomorrow;
+            }
+
+            if (endDateInput) {
+                endDateInput.min = tomorrow;
+                endDateInput.value = defaultEnd;
+            }
+
+            document.getElementById('daysCount').value = 7;
+            document.getElementById('territoryHint').textContent = '';
         },
 
         populateSelects() {
@@ -1076,7 +1116,7 @@ const Pages = {
             const amountSelect = document.getElementById('amountSelect');
             if (amountSelect) {
                 amountSelect.innerHTML = MockData.insuranceAmounts.map(a =>
-                    `<option value="${a.value}">${a.label}</option>`
+                    `<option value="${a.value}" data-currency="${a.currency}">${a.label}</option>`
                 ).join('');
                 amountSelect.value = '30000';
             }
@@ -1109,7 +1149,7 @@ const Pages = {
                     }
                     e.target.value = '';
                 } else if (App.contractForm.territories.length >= App.settings.maxTerritories) {
-                    Toast.warning(`Максимум ${App.settings.maxTerritories} территории`);
+                    Toast.warning(`Максимум ${App.settings.maxTerritories} страны`);
                     e.target.value = '';
                 }
             });
@@ -1117,8 +1157,14 @@ const Pages = {
             // Program change
             document.getElementById('programSelect')?.addEventListener('change', (e) => {
                 App.contractForm.program = e.target.value;
-                const isMulti = e.target.value === 'multi';
-                document.getElementById('multiTripHint')?.classList.toggle('hidden', !isMulti);
+                const isMulti = e.target.value.startsWith('multi_');
+                const hintBlock = document.getElementById('multiTripHint');
+                hintBlock?.classList.toggle('hidden', !isMulti);
+                if (isMulti) {
+                    const selectedProgram = MockData.programs.find(p => p.id === e.target.value);
+                    const badge = hintBlock?.querySelector('.badge');
+                    if (badge) badge.textContent = selectedProgram?.hint || 'Многократные поездки в течение года';
+                }
                 this.updateReview();
             });
 
@@ -1127,31 +1173,46 @@ const Pages = {
                 document.getElementById(id)?.addEventListener('change', (e) => {
                     const key = id.replace('Select', '');
                     App.contractForm[key === 'generalContract' ? 'generalContractId' : key] = e.target.value;
+                    if (id === 'amountSelect') {
+                        const selected = e.target.selectedOptions[0];
+                        App.contractForm.amount = Number(e.target.value);
+                        App.contractForm.amountCurrency = selected?.dataset.currency || 'USD';
+                    }
                     this.updateReview();
                 });
             });
 
             // Dates
             document.getElementById('startDate')?.addEventListener('change', (e) => {
-                App.contractForm.startDate = e.target.value;
-                this.updateDays();
+                App.contractForm.startDate = this.normalizeStartDate(e.target.value);
+                e.target.value = App.contractForm.startDate;
+                this.updateDaysFromDates();
                 this.updateReview();
             });
 
             document.getElementById('endDate')?.addEventListener('change', (e) => {
                 App.contractForm.endDate = e.target.value;
-                this.updateDays();
+                this.updateDaysFromDates();
                 this.updateReview();
             });
 
-            // IIN lookup
-            document.getElementById('lookupIinBtn')?.addEventListener('click', () => this.lookupIIN());
-            document.getElementById('iinInput')?.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.lookupIIN();
+            document.getElementById('daysCount')?.addEventListener('input', (e) => {
+                const days = Number(e.target.value);
+                if (Number.isNaN(days) || days < 1) return;
+                this.updateEndDateFromDays(days);
+                this.updateReview();
             });
 
-            // KDP request
-            document.getElementById('requestKdpBtn')?.addEventListener('click', () => this.requestKDP());
+            // KDP + IIN flow
+            document.getElementById('requestKdpBtn')?.addEventListener('click', () => this.lookupIIN());
+            document.getElementById('iinInput')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.lookupIIN();
+                }
+            });
+
+            document.getElementById('addManualPersonBtn')?.addEventListener('click', () => this.addManualPerson());
 
             // Save draft
             document.getElementById('saveDraftBtn')?.addEventListener('click', () => this.saveDraft());
@@ -1171,7 +1232,8 @@ const Pages = {
                     </span>
                 `;
             }).join('');
-            document.getElementById('territoryHint').textContent = `Выбрано: ${App.contractForm.territories.length} из ${App.settings.maxTerritories}`;
+            document.getElementById('territoryHint').textContent = '';
+            this.applyCountryRules();
         },
 
         removeTerritory(code) {
@@ -1180,12 +1242,88 @@ const Pages = {
             this.updateReview();
         },
 
-        updateDays() {
-            const days = Utils.daysBetween(App.contractForm.startDate, App.contractForm.endDate);
-            document.getElementById('daysCount').value = days;
+        normalizeStartDate(value) {
+            const minStart = Utils.getTomorrow();
+            if (value && value < minStart) {
+                Toast.warning('Дата начала автоматически сдвинута на следующий день от даты выписки');
+                return minStart;
+            }
+            return value;
         },
 
-        lookupIIN() {
+        updateDaysFromDates() {
+            const days = Utils.daysBetween(App.contractForm.startDate, App.contractForm.endDate);
+            document.getElementById('daysCount').value = days;
+            const endDateInput = document.getElementById('endDate');
+            if (endDateInput && App.contractForm.startDate) {
+                endDateInput.min = App.contractForm.startDate;
+            }
+        },
+
+        updateEndDateFromDays(days) {
+            if (!App.contractForm.startDate) return;
+            const normalizedDays = Math.max(1, Number(days) || 1);
+            const endDate = Utils.addDays(App.contractForm.startDate, normalizedDays - 1);
+            App.contractForm.endDate = endDate;
+            const endDateInput = document.getElementById('endDate');
+            if (endDateInput) endDateInput.value = endDate;
+        },
+
+        resolveCountryRules() {
+            const selectedCountries = App.contractForm.territories;
+            let requiredMinAmount = 10000;
+            let requiredCurrency = 'USD';
+            let maxRateFactor = 1;
+
+            selectedCountries.forEach(code => {
+                const rule = MockData.countryRules[code] || MockData.countryRules.DEFAULT;
+                if (rule.minAmount > requiredMinAmount) {
+                    requiredMinAmount = rule.minAmount;
+                    requiredCurrency = rule.currency || 'USD';
+                }
+                maxRateFactor = Math.max(maxRateFactor, rule.rateFactor || 1);
+            });
+
+            return {
+                minAmount: requiredMinAmount,
+                currency: requiredCurrency,
+                rateFactor: maxRateFactor
+            };
+        },
+
+        applyCountryRules() {
+            const { minAmount, currency } = this.resolveCountryRules();
+            const amountHint = document.getElementById('amountHint');
+
+            if (!amountHint) return;
+
+            if (App.contractForm.territories.length === 0) {
+                amountHint.textContent = '';
+                return;
+            }
+
+            const amountTooLow = (Number(App.contractForm.amount) || 0) < minAmount;
+            const currencyMismatch = (Number(App.contractForm.amount) || 0) === minAmount && (App.contractForm.amountCurrency || 'USD') !== currency;
+            if (amountTooLow || currencyMismatch) {
+                App.contractForm.amount = minAmount;
+                App.contractForm.amountCurrency = currency;
+                const amountSelect = document.getElementById('amountSelect');
+                if (amountSelect) {
+                    const targetOption = Array.from(amountSelect.options).find(option =>
+                        Number(option.value) === minAmount && option.dataset.currency === currency
+                    ) || Array.from(amountSelect.options).find(option => Number(option.value) === minAmount);
+
+                    if (targetOption) {
+                        targetOption.selected = true;
+                    }
+                }
+                Toast.info(`Сумма скорректирована: минимум ${minAmount.toLocaleString('ru-RU')} ${currency} для выбранных стран`);
+            }
+
+            amountHint.textContent = `Минимально допустимо для выбранной территории: ${minAmount.toLocaleString('ru-RU')} ${currency}`;
+        },
+
+        async lookupIIN() {
             const iin = document.getElementById('iinInput')?.value;
             if (!Utils.validateIIN(iin)) {
                 Toast.error('Некорректный ИИН (должен содержать 12 цифр)');
@@ -1197,7 +1335,25 @@ const Pages = {
                 return;
             }
 
-            // Mock ESBD lookup
+            const requestBtn = document.getElementById('requestKdpBtn');
+            if (requestBtn) {
+                requestBtn.disabled = true;
+                requestBtn.textContent = 'Ожидание КДП...';
+            }
+
+            Toast.info('Запрашиваем КДП. После подтверждения автоматически запрашиваем данные из госбазы...');
+            const kdpApproved = await this.requestKDP({ fromIinFlow: true });
+            if (!kdpApproved) {
+                Toast.error('Не удалось подтвердить КДП. Добавление застрахованного отменено');
+                if (requestBtn) {
+                    requestBtn.disabled = false;
+                    requestBtn.textContent = 'Запросить КДП';
+                }
+                return;
+            }
+
+            Toast.info('КДП получено. Запрашиваем данные из госбазы...');
+            // Mock ESBD lookup after KDP confirmation
             const person = MockData.esbdDatabase[iin];
             if (person) {
                 App.contractForm.persons.push({ iin, ...person });
@@ -1223,6 +1379,50 @@ const Pages = {
                 document.getElementById('iinInput').value = '';
                 Toast.info('Лицо добавлено (mock данные)');
             }
+
+            if (requestBtn) {
+                requestBtn.disabled = false;
+                requestBtn.textContent = 'Запросить КДП';
+            }
+        },
+
+        addManualPerson() {
+            const birthDate = document.getElementById('manualBirthDateInput')?.value;
+            if (!birthDate) {
+                Toast.error('Укажите дату рождения');
+                return;
+            }
+
+            const age = Utils.getAge(birthDate);
+            if (age === null) {
+                Toast.error('Не удалось определить возраст');
+                return;
+            }
+
+            if (age >= 1 && age <= 64) {
+                Toast.warning('Ручное добавление доступно для возрастов до 1 года и старше 64 лет');
+                return;
+            }
+
+            if (App.contractForm.persons.length >= App.settings.maxPersons) {
+                Toast.error(`Максимум ${App.settings.maxPersons} застрахованных`);
+                return;
+            }
+
+            const suffix = App.contractForm.persons.length + 1;
+            App.contractForm.persons.push({
+                iin: 'N/A',
+                lastName: `Возрастной`,
+                firstName: `Турист ${suffix}`,
+                middleName: '',
+                birthDate,
+                docType: 'manual_age_only',
+                docNumber: ''
+            });
+            document.getElementById('manualBirthDateInput').value = '';
+            this.renderPersons();
+            this.updateReview();
+            Toast.success('Застрахованный добавлен в расчёт без ИИН');
         },
 
         renderPersons() {
@@ -1232,7 +1432,7 @@ const Pages = {
                     <div class="person-card-avatar">${Utils.getInitials(p.lastName + ' ' + p.firstName)}</div>
                     <div class="person-card-info">
                         <div class="person-card-name">${p.lastName} ${p.firstName} ${p.middleName || ''}</div>
-                        <div class="person-card-details">ИИН: ${p.iin} • ${Utils.formatDate(p.birthDate)}</div>
+                        <div class="person-card-details">${p.iin && p.iin !== 'N/A' ? `ИИН: ${p.iin} • ` : 'Без ИИН • '} ${Utils.formatDate(p.birthDate)}</div>
                     </div>
                     <div class="person-card-actions">
                         <button class="btn btn-ghost btn-sm" onclick="Pages['new-contract'].removePerson(${idx})">❌</button>
@@ -1248,33 +1448,35 @@ const Pages = {
             this.updateReview();
         },
 
-        requestKDP() {
-            if (App.contractForm.persons.length === 0) {
+        requestKDP(options = {}) {
+            if (!options.fromIinFlow && App.contractForm.persons.length === 0) {
                 Toast.error('Сначала добавьте застрахованных');
-                return;
+                return Promise.resolve(false);
+            }
+
+            if (App.contractForm.kdpConfirmed) {
+                return Promise.resolve(true);
             }
 
             Toast.info('Отправка SMS с запросом КДП...');
             AuditLog.add('request_kdp', 'contract', App.contractForm.id, 'Запрос КДП по SMS');
 
-            setTimeout(() => {
-                App.contractForm.kdpConfirmed = true;
-                App.contractForm.kdpConfirmedAt = new Date().toISOString();
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    App.contractForm.kdpConfirmed = true;
+                    App.contractForm.kdpConfirmedAt = new Date().toISOString();
 
-                document.getElementById('kdpStatusLabel').textContent = 'КДП получено ✓';
-                document.getElementById('kdpStatusLabel').style.color = 'var(--color-success)';
-                document.getElementById('kdpStatusDesc').textContent = 'Согласие подтверждено';
-                document.getElementById('requestKdpBtn').disabled = true;
-                document.getElementById('requestKdpBtn').textContent = 'Подтверждено';
-
-                this.updateReview();
-                AuditLog.add('kdp_confirmed', 'contract', App.contractForm.id, 'КДП подтверждено');
-                Toast.success('КДП успешно подтверждено');
-            }, 1500);
+                    this.updateReview();
+                    AuditLog.add('kdp_confirmed', 'contract', App.contractForm.id, 'КДП подтверждено');
+                    Toast.success('КДП успешно подтверждено');
+                    resolve(true);
+                }, 1500);
+            });
         },
 
         updateReview() {
             const f = App.contractForm;
+            this.applyCountryRules();
 
             document.getElementById('reviewProduct').textContent = f.productType === 'travel' ? 'ВЗР' : 'ОСТ';
             document.getElementById('reviewTerritory').textContent = f.territories.map(t => MockData.countries.find(c => c.code === t)?.name || t).join(', ') || '-';
@@ -1285,7 +1487,9 @@ const Pages = {
                 const prog = MockData.programs.find(p => p.id === f.program);
                 const variant = MockData.programVariants.find(v => v.id === f.variant);
                 document.getElementById('reviewProgram').textContent = `${prog?.name || '-'} / ${variant?.name || '-'}`;
-                document.getElementById('reviewAmount').textContent = MockData.insuranceAmounts.find(a => a.value == f.amount)?.label || '-';
+                document.getElementById('reviewAmount').textContent =
+                    MockData.insuranceAmounts.find(a => a.value == f.amount && a.currency === (f.amountCurrency || 'USD'))?.label ||
+                    `${Number(f.amount || 0).toLocaleString('ru-RU')} ${f.amountCurrency || 'USD'}`;
             } else {
                 document.getElementById('reviewProgramRow')?.classList.add('hidden');
                 document.getElementById('reviewAmountRow')?.classList.add('hidden');
@@ -1304,16 +1508,24 @@ const Pages = {
             const amountMultiplier = (f.amount || 10000) / 10000;
             const days = Utils.daysBetween(f.startDate, f.endDate) || 1;
             const personMultiplier = Math.max(1, f.persons.length);
-            const premium = Math.round(basePremium * amountMultiplier * (days / 7) * personMultiplier);
+            const countryRule = this.resolveCountryRules();
+            const usdRate = CurrencyTicker.rates.USD.rate;
+            const productRate = f.productType === 'travel' ? usdRate * 1.03 : usdRate;
+            const premium = Math.round(basePremium * amountMultiplier * (days / 7) * personMultiplier * countryRule.rateFactor * (productRate / 475));
             App.contractForm.premium = premium;
             document.getElementById('reviewPremium').textContent = Utils.formatCurrency(premium);
 
             // Enable/disable activate button
-            const canActivate = f.territories.length > 0 && f.persons.length > 0 && f.kdpConfirmed && f.startDate && f.endDate;
+            const canActivate = f.territories.length > 0 && f.persons.length > 0 && f.kdpConfirmed && f.startDate && f.endDate && Utils.daysBetween(f.startDate, f.endDate) > 0;
             document.getElementById('activateBtn').disabled = !canActivate;
         },
 
         saveDraft() {
+            if (App.contractForm.startDate < Utils.getTomorrow()) {
+                Toast.error('Дата начала должна быть не ранее следующего дня от даты выписки');
+                return;
+            }
+
             const contract = {
                 ...App.contractForm,
                 status: 'draft',
@@ -1324,8 +1536,8 @@ const Pages = {
             };
 
             App.contracts.unshift(contract);
-            AuditLog.add('create_draft', 'contract', contract.id, 'Создан черновик');
-            Toast.success('Черновик сохранён');
+            AuditLog.add('create_draft', 'contract', contract.id, 'Договор создан');
+            Toast.success('Статус договора: Создан');
         },
 
         async activate() {
@@ -1336,6 +1548,7 @@ const Pages = {
             if (f.persons.length === 0) { Toast.error('Добавьте застрахованных'); return; }
             if (!f.kdpConfirmed) { Toast.error('Необходимо получить КДП'); return; }
             if (!f.startDate || !f.endDate) { Toast.error('Укажите период страхования'); return; }
+            if (f.startDate < Utils.getTomorrow()) { Toast.error('Дата начала должна быть не ранее следующего дня от даты выписки'); return; }
 
             // Show loading
             document.getElementById('activationStatus')?.classList.remove('hidden');

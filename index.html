@@ -127,7 +127,7 @@
                             <line x1="12" y1="18" x2="12" y2="12" />
                             <line x1="9" y1="15" x2="15" y2="15" />
                         </svg>
-                        <span class="sidebar-link-text">Новый договор</span>
+                        <span class="sidebar-link-text">Создать договор/сертификат ВЗР</span>
                     </a>
                     <a href="#/contracts" class="sidebar-link" data-nav="contracts">
                         <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -292,11 +292,11 @@
                 </div>
                 <div class="card stat-card">
                     <div class="stat-value" id="statPendingContracts">0</div>
-                    <div class="stat-label">На проверке CRM</div>
+                    <div class="stat-label">Выписаны</div>
                 </div>
                 <div class="card stat-card">
                     <div class="stat-value" id="statDraftContracts">0</div>
-                    <div class="stat-label">Черновики</div>
+                    <div class="stat-label">Созданы</div>
                 </div>
                 <div class="card stat-card">
                     <div class="stat-value" id="statTotalPremium">0 ₸</div>
@@ -341,8 +341,8 @@
     <template id="newContractPageTemplate">
         <div class="page animate-fade-in">
             <div class="page-header">
-                <h1 class="page-title">Новый договор</h1>
-                <p class="page-subtitle">Создание договора страхования</p>
+                <h1 class="page-title">Создание нового договора/сертификата ВЗР</h1>
+                <p class="page-subtitle">Оформление договора с проверкой ограничений по странам, датам и КДП</p>
             </div>
 
             <!-- Contract Form + Review Panel Layout -->
@@ -406,7 +406,7 @@
 
                         <!-- Territories -->
                         <div class="form-group">
-                            <label class="form-label required">Территория покрытия (до 3)</label>
+                            <label class="form-label required">Территория покрытия (максимум 3 страны)</label>
                             <div id="territoriesContainer" class="flex gap-2 flex-wrap mb-2">
                                 <!-- Tags added here -->
                             </div>
@@ -414,7 +414,7 @@
                                 <option value="">Выберите страну/территорию...</option>
                                 <!-- Populated by JS -->
                             </select>
-                            <div class="form-helper" id="territoryHint">Выбрано: 0 из 3</div>
+                            <div class="form-helper" id="territoryHint"></div>
                         </div>
 
                         <!-- VZR-specific fields -->
@@ -444,6 +444,11 @@
                                 <select class="form-select" id="purposeSelect">
                                     <!-- Populated by JS -->
                                 </select>
+                                <div class="form-helper">
+                                    Дополнительно покрываются: самодеятельный туризм, любительский спорт, серфинг, спортивные игры, аквапарки,
+                                    водные активности, вело- и пешие маршруты, пещеры, джип-сафари, поездки на животных, пляжные виды спорта,
+                                    кемпинг и другие аналогичные активности (до 3 страховых случаев).
+                                </div>
                             </div>
 
                             <div class="form-group">
@@ -460,14 +465,15 @@
                             <div class="form-group">
                                 <label class="form-label required">Дата начала</label>
                                 <input type="date" class="form-input" id="startDate">
+                                <div class="form-helper">Дата начала должна быть не ранее следующего дня после даты выписки.</div>
                             </div>
                             <div class="form-group">
                                 <label class="form-label required">Дата окончания</label>
                                 <input type="date" class="form-input" id="endDate">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Дней</label>
-                                <input type="number" class="form-input" id="daysCount" readonly>
+                                <label class="form-label">Количество дней</label>
+                                <input type="number" class="form-input" id="daysCount" min="1" placeholder="Напр. 7">
                             </div>
                         </div>
                     </div>
@@ -488,40 +494,27 @@
                             <div class="flex gap-3">
                                 <input type="text" class="form-input" id="iinInput" placeholder="Введите ИИН (12 цифр)"
                                     maxlength="12" style="flex: 1;">
-                                <button type="button" class="btn btn-secondary" id="lookupIinBtn">
+                                <button type="button" class="btn btn-secondary" id="requestKdpBtn">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2">
                                         <circle cx="11" cy="11" r="8" />
                                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                                     </svg>
-                                    Найти в ЕСБД
+                                    Запросить КДП
                                 </button>
                             </div>
-                            <div class="form-helper">Данные автоматически заполнятся из ЕСБД</div>
+                            <div class="form-helper">Введите ИИН, запросите КДП, после подтверждения согласия данные автоматически подтянутся из госбазы.</div>
                         </div>
-                    </div>
 
-                    <hr style="border: none; border-top: 1px solid var(--color-divider); margin: var(--space-6) 0;">
-
-                    <!-- Step 4: KDP Consent -->
-                    <div class="form-section" id="stepKdp">
-                        <h3 class="card-title mb-5">Согласие на обработку данных (КДП)</h3>
-
-                        <div class="flex items-center justify-between gap-4 p-5"
-                            style="background: var(--color-bg-secondary); border-radius: var(--radius-base);">
-                            <div>
-                                <div class="font-semibold" id="kdpStatusLabel">КДП не получено</div>
-                                <div class="text-sm text-secondary" id="kdpStatusDesc">Необходимо получить согласие
-                                    перед активацией</div>
+                        <div class="form-group">
+                            <label class="form-label">Добавить без ИИН (для возрастов &lt; 1 и &gt; 64)</label>
+                            <div class="flex gap-3">
+                                <input type="date" class="form-input" id="manualBirthDateInput" style="flex: 1;">
+                                <button type="button" class="btn btn-secondary" id="addManualPersonBtn">
+                                    Добавить в расчёт
+                                </button>
                             </div>
-                            <button type="button" class="btn btn-secondary" id="requestKdpBtn" style="flex-shrink: 0;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path
-                                        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                                </svg>
-                                Запросить по SMS
-                            </button>
+                            <div class="form-helper">Используется для тарификации без ввода ИИН и паспортных данных.</div>
                         </div>
                     </div>
 
@@ -615,7 +608,7 @@
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
-                    Новый договор
+                    Создать договор/сертификат ВЗР
                 </a>
             </div>
 
@@ -629,9 +622,9 @@
                     <label class="form-label">Статус</label>
                     <select class="form-select" id="contractStatusFilter">
                         <option value="">Все</option>
-                        <option value="draft">Черновик</option>
-                        <option value="pending">На проверке</option>
-                        <option value="active">Активен</option>
+                        <option value="draft">Создан</option>
+                        <option value="pending">Выписан</option>
+                        <option value="active">Заключен</option>
                         <option value="rejected">Отклонён</option>
                         <option value="cancelled">Расторгнут</option>
                     </select>
@@ -722,7 +715,7 @@
                     <label class="form-label">Статус</label>
                     <select class="form-select" id="reportStatusFilter">
                         <option value="">Все</option>
-                        <option value="active">Активен</option>
+                        <option value="active">Заключен</option>
                         <option value="rejected">Отклонён</option>
                         <option value="cancelled">Расторгнут</option>
                     </select>

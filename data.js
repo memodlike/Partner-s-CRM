@@ -309,15 +309,36 @@ const COUNTRIES = [
     { code: 'SG', name: 'Сингапур', popular: false },
     { code: 'MV', name: 'Мальдивы', popular: false },
     { code: 'LK', name: 'Шри-Ланка', popular: false },
+    { code: 'IN', name: 'Индия', popular: false },
+    { code: 'IL', name: 'Израиль', popular: false },
+    { code: 'CY', name: 'Кипр', popular: false },
+    { code: 'PT', name: 'Португалия', popular: false },
+    { code: 'NL', name: 'Нидерланды', popular: false },
+    { code: 'AT', name: 'Австрия', popular: false },
+    { code: 'BE', name: 'Бельгия', popular: false },
+    { code: 'CH', name: 'Швейцария', popular: false },
+    { code: 'BG', name: 'Болгария', popular: false },
+    { code: 'ME', name: 'Черногория', popular: false },
+    { code: 'HR', name: 'Хорватия', popular: false },
+    { code: 'RS', name: 'Сербия', popular: false },
+    { code: 'UZ', name: 'Узбекистан', popular: false },
+    { code: 'KG', name: 'Кыргызстан', popular: false },
+    { code: 'AZ', name: 'Азербайджан', popular: false },
+    { code: 'AM', name: 'Армения', popular: false },
+    { code: 'QA', name: 'Катар', popular: false },
+    { code: 'SA', name: 'Саудовская Аравия', popular: false },
+    { code: 'SGN', name: 'Сингапур + Малайзия', popular: false },
     { code: 'SCHENGEN', name: 'Шенген (все страны)', popular: true },
     { code: 'WORLD', name: 'Весь мир', popular: false }
 ];
 
 // Country rules for insurance amounts
 const COUNTRY_RULES = {
-    SCHENGEN: { minAmount: 30000, currency: 'EUR', requiredAmount: 30000 },
-    US: { minAmount: 50000, currency: 'USD' },
-    DEFAULT: { minAmount: 10000, currency: 'USD' }
+    SCHENGEN: { minAmount: 30000, currency: 'EUR', rateFactor: 1.35 },
+    GE: { minAmount: 30000, currency: 'USD', rateFactor: 1.1 },
+    US: { minAmount: 50000, currency: 'USD', rateFactor: 1.5 },
+    WORLD: { minAmount: 50000, currency: 'USD', rateFactor: 1.55 },
+    DEFAULT: { minAmount: 10000, currency: 'USD', rateFactor: 1 }
 };
 
 const PURPOSE_OF_TRIP = [
@@ -325,18 +346,21 @@ const PURPOSE_OF_TRIP = [
     { id: 'guest', name: 'Частный визит (гостевой)' },
     { id: 'business', name: 'Бизнес / Деловая поездка' },
     { id: 'education', name: 'Обучение / Стажировка' },
-    { id: 'sport', name: 'Спорт / Активный отдых' },
     { id: 'business_tourism', name: 'Деловой туризм' }
 ];
 
 const PROGRAMS = [
     { id: 'base', name: 'Base (Базовая)', multiTrip: false },
-    { id: 'multi', name: 'Multi Trip (Мультипоездка)', multiTrip: true, hint: 'Покрытие нескольких поездок в течение года, каждая до 90 дней' }
+    { id: 'multi_30', name: 'Multi Trip 30', multiTrip: true, maxDaysPerTrip: 30, hint: 'Многократные поездки в течение года, до 30 дней каждая' },
+    { id: 'multi_60', name: 'Multi Trip 60', multiTrip: true, maxDaysPerTrip: 60, hint: 'Многократные поездки в течение года, до 60 дней каждая' },
+    { id: 'multi_90', name: 'Multi Trip 90', multiTrip: true, maxDaysPerTrip: 90, hint: 'Многократные поездки в течение года, до 90 дней каждая' }
 ];
 
 const PROGRAM_VARIANTS = [
     { id: 'standard', name: 'Standart', includesCovid: false },
     { id: 'plus', name: 'Plus', includesCovid: false },
+    { id: 'sport_light', name: 'Sport Light', includesCovid: false, sportLevel: 'amateur' },
+    { id: 'sport_pro', name: 'Sport Pro', includesCovid: false, sportLevel: 'professional' },
     { id: 'covid', name: '+COVID', includesCovid: true },
     { id: 'covid_only', name: 'COVID-only', includesCovid: true, covidOnly: true }
 ];
@@ -344,6 +368,7 @@ const PROGRAM_VARIANTS = [
 const INSURANCE_AMOUNTS = [
     { value: 10000, currency: 'USD', label: '10 000 USD' },
     { value: 30000, currency: 'USD', label: '30 000 USD' },
+    { value: 30000, currency: 'EUR', label: '30 000 EUR' },
     { value: 50000, currency: 'USD', label: '50 000 USD' }
 ];
 
@@ -409,9 +434,9 @@ const REASON_CODES = {
 // =============================================================================
 
 const CONTRACT_STATUSES = {
-    draft: { id: 'draft', name: 'Черновик', color: '#8E8E93', canEdit: true, canActivate: true },
-    pending: { id: 'pending', name: 'На проверке CRM', color: '#FF9500', canEdit: false, canActivate: false },
-    active: { id: 'active', name: 'Активен', color: '#34C759', canEdit: false, canActivate: false },
+    draft: { id: 'draft', name: 'Создан', color: '#8E8E93', canEdit: true, canActivate: true },
+    pending: { id: 'pending', name: 'Выписан', color: '#FF9500', canEdit: false, canActivate: false },
+    active: { id: 'active', name: 'Заключен', color: '#34C759', canEdit: false, canActivate: false },
     rejected: { id: 'rejected', name: 'Отклонён', color: '#FF3B30', canEdit: true, canActivate: true },
     cancelled: { id: 'cancelled', name: 'Расторгнут', color: '#8E8E93', canEdit: false, canActivate: false },
     voided: { id: 'voided', name: 'Испорчен', color: '#8E8E93', canEdit: false, canActivate: false }
@@ -626,7 +651,7 @@ const CONTRACTS = [
         generalContractId: 'gc-7',
         blankType: 'electronic',
         territories: ['SCHENGEN'],
-        program: 'multi',
+        program: 'multi_90',
         variant: 'plus',
         purpose: 'tourism',
         amount: 30000,
@@ -727,7 +752,7 @@ for (let i = 11; i <= 40; i++) {
     };
     
     if (isTravel) {
-        contract.program = Math.random() > 0.8 ? 'multi' : 'base';
+        contract.program = Math.random() > 0.8 ? 'multi_60' : 'base';
         contract.variant = ['standard', 'plus', 'covid'][Math.floor(Math.random() * 3)];
         contract.purpose = PURPOSE_OF_TRIP[Math.floor(Math.random() * PURPOSE_OF_TRIP.length)].id;
         contract.amount = INSURANCE_AMOUNTS[Math.floor(Math.random() * INSURANCE_AMOUNTS.length)].value;
