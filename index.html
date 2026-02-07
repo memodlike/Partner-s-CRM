@@ -127,7 +127,7 @@
                             <line x1="12" y1="18" x2="12" y2="12" />
                             <line x1="9" y1="15" x2="15" y2="15" />
                         </svg>
-                        <span class="sidebar-link-text">Создать договор/сертификат ВЗР</span>
+                        <span class="sidebar-link-text">Создать договор/сертификат</span>
                     </a>
                     <a href="#/contracts" class="sidebar-link" data-nav="contracts">
                         <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -341,12 +341,12 @@
     <template id="newContractPageTemplate">
         <div class="page animate-fade-in">
             <div class="page-header">
-                <h1 class="page-title">Создание нового договора/сертификата ВЗР</h1>
-                <p class="page-subtitle">Оформление договора с проверкой ограничений по странам, датам и КДП</p>
+                <h1 class="page-title">Создание договора / сертификата</h1>
+                <p class="page-subtitle">Выберите продукт одним кликом и заполните только нужные поля</p>
             </div>
 
             <!-- Contract Form + Review Panel Layout -->
-            <div style="display: grid; grid-template-columns: 1fr 320px; gap: var(--space-7); align-items: start;">
+            <div class="contract-layout">
                 <!-- Main Form -->
                 <div class="card">
                     <!-- Step 1: Product Selection -->
@@ -354,25 +354,10 @@
                         <h3 class="card-title mb-5">Выбор продукта</h3>
                         <div class="form-group">
                             <label class="form-label required">Продукт</label>
-                            <div class="flex gap-3">
-                                <label class="form-check"
-                                    style="flex: 1; padding: var(--space-4); background: var(--color-bg-secondary); border-radius: var(--radius-base); border: 2px solid var(--color-border);">
-                                    <input type="radio" name="productType" value="travel" class="form-check-input"
-                                        checked>
-                                    <div>
-                                        <div class="font-semibold">ВЗР</div>
-                                        <div class="text-xs text-secondary">Выезжающие за рубеж</div>
-                                    </div>
-                                </label>
-                                <label class="form-check"
-                                    style="flex: 1; padding: var(--space-4); background: var(--color-bg-secondary); border-radius: var(--radius-base); border: 2px solid var(--color-border);">
-                                    <input type="radio" name="productType" value="mandatory" class="form-check-input">
-                                    <div>
-                                        <div class="font-semibold">ОСТ</div>
-                                        <div class="text-xs text-secondary">Обязательное страхование туриста</div>
-                                    </div>
-                                </label>
+                            <div class="product-picker" id="productPicker" role="listbox" aria-label="Выбор продукта">
+                                <!-- Product cards are rendered by JS -->
                             </div>
+                            <div class="form-helper" id="productPickerHint">Выбор продукта в один клик. При добавлении новых классов страхования они появятся здесь автоматически.</div>
                         </div>
 
                         <div class="form-group" id="generalContractGroup">
@@ -418,7 +403,7 @@
                         </div>
 
                         <!-- VZR-specific fields -->
-                        <div id="vzrFields">
+                        <div id="vzrFields" class="product-specific-fields">
                             <div class="form-group">
                                 <label class="form-label required">Программа</label>
                                 <select class="form-select" id="programSelect">
@@ -608,7 +593,7 @@
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
-                    Создать договор/сертификат ВЗР
+                    Создать договор/сертификат
                 </a>
             </div>
 

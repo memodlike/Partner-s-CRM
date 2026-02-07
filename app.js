@@ -143,6 +143,24 @@ const Utils = {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    },
+
+    getProductMeta(productId) {
+        const product = (MockData.productCatalog || []).find(p => p.id === productId);
+        if (product) return product;
+        if (productId === 'travel') return { id: 'travel', code: 'ВЗР', shortName: 'ВЗР', name: 'Выезжающие за рубеж', layout: 'travel' };
+        if (productId === 'mandatory') return { id: 'mandatory', code: 'ОСТ', shortName: 'ОСТ', name: 'Обязательное страхование туриста', layout: 'basic' };
+        return { id: productId, code: productId?.toUpperCase() || '-', shortName: productId || '-', name: productId || '-', layout: 'basic' };
+    },
+
+    getProductLabel(productId, options = {}) {
+        const meta = this.getProductMeta(productId);
+        if (options.full) return `${meta.code} · ${meta.name}`;
+        return meta.shortName || meta.code || meta.id;
+    },
+
+    isTravelProduct(productId) {
+        return this.getProductMeta(productId).layout === 'travel';
     }
 };
 
@@ -304,28 +322,111 @@ const CurrencyTicker = {
 
 const Toast = {
     container: null,
+    isPaused: false,
 
     init() {
         this.container = document.getElementById('toastContainer');
     },
 
+    pauseAll() {
+        if (this.isPaused) return;
+        this.isPaused = true;
+
+        this.container?.querySelectorAll('.toast').forEach(toast => {
+            const state = toast._toastState;
+            if (!state || state.removing || state.paused) return;
+
+            clearTimeout(state.dismissId);
+            state.remaining = Math.max(0, state.remaining - (Date.now() - state.startedAt));
+            state.paused = true;
+            toast.classList.add('paused');
+        });
+    },
+
+    resumeAll() {
+        if (!this.isPaused) return;
+        this.isPaused = false;
+
+        this.container?.querySelectorAll('.toast').forEach(toast => {
+            const state = toast._toastState;
+            if (!state || state.removing || !state.paused) return;
+
+            state.paused = false;
+            toast.classList.remove('paused');
+            this.scheduleDismiss(toast, state.remaining);
+        });
+    },
+
+    scheduleDismiss(toast, delayMs) {
+        const state = toast._toastState;
+        if (!state || state.removing) return;
+
+        clearTimeout(state.dismissId);
+        state.remaining = Math.max(0, delayMs);
+        state.startedAt = Date.now();
+
+        state.dismissId = setTimeout(() => {
+            this.removeToast(toast);
+        }, state.remaining);
+    },
+
+    removeToast(toast) {
+        const state = toast._toastState;
+        if (!state || state.removing) return;
+
+        state.removing = true;
+        clearTimeout(state.dismissId);
+        toast.classList.remove('active');
+        toast.classList.add('removing');
+
+        state.removeId = setTimeout(() => {
+            toast.remove();
+        }, 280);
+    },
+
     show(message, type = 'info', duration = 4000) {
+        if (!this.container) return;
+
+        const safeDuration = Math.max(1200, duration);
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
+        toast.style.setProperty('--toast-duration', `${safeDuration}ms`);
+        toast._toastState = {
+            dismissId: null,
+            removeId: null,
+            startedAt: Date.now(),
+            remaining: safeDuration,
+            paused: false,
+            removing: false
+        };
 
         const icons = {
-            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
-            error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.6 2.6L16.5 9.5"/></svg>',
+            error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.4L2.8 19.3a1.4 1.4 0 0 0 1.2 2.1h16a1.4 1.4 0 0 0 1.2-2.1L12 3.4z"/><path d="M12 9v4.6"/><circle cx="12" cy="16.6" r="0.7"/></svg>',
+            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11.3v5"/><circle cx="12" cy="7.8" r="0.7"/></svg>'
+        };
+
+        const titles = {
+            success: 'Успешно',
+            error: 'Ошибка',
+            warning: 'Внимание',
+            info: 'Информация'
         };
 
         toast.innerHTML = `
             <span class="toast-icon">${icons[type] || icons.info}</span>
             <div class="toast-content">
+                <div class="toast-title">${titles[type] || titles.info}</div>
                 <div class="toast-message">${Utils.escapeHtml(message)}</div>
             </div>
         `;
+
+        // Hover/focus over any toast pauses all current notifications
+        toast.addEventListener('mouseenter', () => this.pauseAll());
+        toast.addEventListener('mouseleave', () => this.resumeAll());
+        toast.addEventListener('focusin', () => this.pauseAll());
+        toast.addEventListener('focusout', () => this.resumeAll());
 
         this.container.appendChild(toast);
 
@@ -334,12 +435,13 @@ const Toast = {
             toast.classList.add('active');
         });
 
-        // Auto remove with smooth exit animation
-        setTimeout(() => {
-            toast.classList.remove('active');
-            toast.classList.add('removing');
-            setTimeout(() => toast.remove(), 300);
-        }, duration);
+        // Start countdown (or wait in pause mode)
+        if (this.isPaused) {
+            toast._toastState.paused = true;
+            toast.classList.add('paused');
+        } else {
+            this.scheduleDismiss(toast, safeDuration);
+        }
     },
 
     success(message) { this.show(message, 'success'); },
@@ -613,7 +715,7 @@ const Router = {
     routes: {
         'login': { template: 'loginPageTemplate', requiresAuth: false, title: 'Вход' },
         'dashboard': { template: 'dashboardPageTemplate', requiresAuth: true, title: 'Сводка' },
-        'new-contract': { template: 'newContractPageTemplate', requiresAuth: true, title: 'Создание договора/сертификата ВЗР', permission: 'create' },
+        'new-contract': { template: 'newContractPageTemplate', requiresAuth: true, title: 'Создание договора / сертификата', permission: 'create' },
         'contracts': { template: 'contractsPageTemplate', requiresAuth: true, title: 'Договоры' },
         'reports': { template: 'reportsPageTemplate', requiresAuth: true, title: 'Отчёты', permission: 'reports' },
         'admin': { template: 'adminPageTemplate', requiresAuth: true, title: 'Админ', permission: 'adminUsers' },
@@ -853,7 +955,7 @@ const Pages = {
                 return `
                     <tr>
                         <td><span class="font-medium">${c.policyNumber || c.id}</span></td>
-                        <td>${c.type === 'travel' ? 'ВЗР' : 'ОСТ'}</td>
+                        <td>${Utils.getProductLabel(c.type)}</td>
                         <td>${person ? `${person.lastName} ${person.firstName}` : '-'}</td>
                         <td>${Utils.formatDate(c.startDate)} - ${Utils.formatDate(c.endDate)}</td>
                         <td><span class="status-badge" style="color: ${statusInfo.color}; background: ${statusInfo.color}15">${statusInfo.name}</span></td>
@@ -867,6 +969,7 @@ const Pages = {
     // CONTRACTS PAGE
     'contracts': {
         init() {
+            this.populateProductFilter();
             this.render();
             this.bindEvents();
 
@@ -874,6 +977,16 @@ const Pages = {
             if (!Permissions.can('create')) {
                 document.getElementById('newContractBtn')?.classList.add('hidden');
             }
+        },
+
+        populateProductFilter() {
+            const typeSelect = document.getElementById('contractTypeFilter');
+            if (!typeSelect) return;
+
+            typeSelect.innerHTML = '<option value="">Все</option>' +
+                (MockData.productCatalog || []).map(product =>
+                    `<option value="${product.id}">${product.shortName || product.code || product.name}</option>`
+                ).join('');
         },
 
         render(filters = {}) {
@@ -920,7 +1033,7 @@ const Pages = {
                             <div class="font-medium">${c.policyNumber || c.externalId || c.id}</div>
                             <div class="text-xs text-tertiary">${c.id}</div>
                         </td>
-                        <td><span class="badge ${c.type === 'travel' ? 'badge-primary' : 'badge-info'}">${c.type === 'travel' ? 'ВЗР' : 'ОСТ'}</span></td>
+                        <td><span class="badge ${Utils.isTravelProduct(c.type) ? 'badge-primary' : 'badge-info'}">${Utils.getProductLabel(c.type)}</span></td>
                         <td>${person ? `${person.lastName} ${person.firstName}` : '-'}</td>
                         <td>${c.territories?.map(t => MockData.countries.find(ct => ct.code === t)?.name || t).join(', ') || '-'}</td>
                         <td>${Utils.formatDate(c.startDate)} - ${Utils.formatDate(c.endDate)}</td>
@@ -1002,19 +1115,127 @@ const Pages = {
     'new-contract': {
         init() {
             this.resetForm();
+            this.renderProductPicker();
             this.populateSelects();
+            this.applyProductLayout({ immediate: true });
             this.bindEvents();
             this.updateDaysFromDates();
             this.updateReview();
         },
 
+        getProductOptions() {
+            const company = Permissions.getCurrentCompany();
+            const catalog = (MockData.productCatalog && MockData.productCatalog.length > 0)
+                ? MockData.productCatalog
+                : [
+                    { id: 'travel', code: 'ВЗР', shortName: 'ВЗР', icon: '✈︎', name: 'Выезжающие за рубеж', description: '', audience: '', layout: 'travel', defaultAmount: 30000, theme: 'ocean', recommended: true },
+                    { id: 'mandatory', code: 'ОСТ', shortName: 'ОСТ', icon: '🛡', name: 'Обязательное страхование туриста', description: '', audience: '', layout: 'basic', defaultAmount: 30000, theme: 'sunset', recommended: false }
+                ];
+
+            return catalog.map(product => ({
+                ...product,
+                available: !company || company.generalContracts.some(gc => gc.product === product.id)
+            }));
+        },
+
+        getDefaultProduct() {
+            const productOptions = this.getProductOptions();
+            return productOptions.find(p => p.available && p.recommended)
+                || productOptions.find(p => p.available)
+                || productOptions[0]
+                || { id: 'travel', shortName: 'ВЗР', defaultAmount: 30000, layout: 'travel', available: true };
+        },
+
+        renderProductPicker() {
+            const picker = document.getElementById('productPicker');
+            if (!picker) return;
+
+            const productOptions = this.getProductOptions();
+            const activeProduct = productOptions.find(p => p.id === App.contractForm.productType && p.available) || this.getDefaultProduct();
+            App.contractForm.productType = activeProduct.id;
+
+            picker.innerHTML = productOptions.map(product => `
+                <button
+                    type="button"
+                    class="product-option theme-${product.theme || 'ocean'} ${product.id === App.contractForm.productType ? 'active' : ''}"
+                    data-product-id="${product.id}"
+                    role="option"
+                    aria-selected="${product.id === App.contractForm.productType ? 'true' : 'false'}"
+                    ${product.available ? '' : 'disabled'}>
+                    <div class="product-option-icon">${Utils.escapeHtml(product.icon || '🧩')}</div>
+                    <div class="product-option-content">
+                        <div class="product-option-head">
+                            <span class="product-option-code">${product.code || product.shortName || product.id}</span>
+                            ${product.recommended ? '<span class="product-option-badge">Быстрый выбор</span>' : ''}
+                        </div>
+                        <div class="product-option-name">${Utils.escapeHtml(product.name || product.id)}</div>
+                        <div class="product-option-desc">${Utils.escapeHtml(product.description || '')}</div>
+                        <div class="product-option-audience">${Utils.escapeHtml(product.audience || '')}</div>
+                    </div>
+                    <div class="product-option-check" aria-hidden="true">✓</div>
+                </button>
+            `).join('');
+
+            const hint = document.getElementById('productPickerHint');
+            if (hint) {
+                hint.textContent = activeProduct.available
+                    ? `Выбран продукт: ${activeProduct.code} — ${activeProduct.name}`
+                    : 'Для выбранного продукта нет доступного генерального договора';
+            }
+        },
+
+        applyProductLayout(options = {}) {
+            const showTravelFields = Utils.isTravelProduct(App.contractForm.productType);
+            const vzrFields = document.getElementById('vzrFields');
+            const multiTripHint = document.getElementById('multiTripHint');
+            if (!vzrFields) return;
+
+            if (options.immediate) {
+                vzrFields.classList.toggle('hidden', !showTravelFields);
+                multiTripHint?.classList.toggle('hidden', !showTravelFields || !String(App.contractForm.program).startsWith('multi_'));
+                return;
+            }
+
+            vzrFields.classList.add('switching');
+            window.setTimeout(() => {
+                vzrFields.classList.toggle('hidden', !showTravelFields);
+                multiTripHint?.classList.toggle('hidden', !showTravelFields || !String(App.contractForm.program).startsWith('multi_'));
+                window.requestAnimationFrame(() => {
+                    vzrFields.classList.remove('switching');
+                });
+            }, 90);
+        },
+
+        selectProduct(productId) {
+            const product = this.getProductOptions().find(item => item.id === productId);
+            if (!product || !product.available) {
+                Toast.warning('Этот продукт пока недоступен для текущей компании');
+                return;
+            }
+
+            if (App.contractForm.productType === productId) return;
+
+            App.contractForm.productType = productId;
+            App.contractForm.amount = product.defaultAmount || 30000;
+            App.contractForm.amountCurrency = 'USD';
+            App.contractForm.generalContractId = null;
+
+            this.renderProductPicker();
+            this.applyProductLayout();
+            this.populateSelects();
+            this.updateReview();
+
+            AuditLog.add('select_product', 'product', productId, `Выбран продукт: ${product.code}`);
+        },
+
         resetForm() {
+            const defaultProduct = this.getDefaultProduct();
             const tomorrow = Utils.getTomorrow();
             const defaultEnd = Utils.addDays(tomorrow, 6);
             App.contractForm = {
                 id: Utils.generateId('cnt'),
                 externalId: Utils.generateId('ext'),
-                productType: 'travel',
+                productType: defaultProduct.id,
                 generalContractId: null,
                 blankType: 'electronic',
                 paperBlankId: null,
@@ -1022,7 +1243,7 @@ const Pages = {
                 program: 'base',
                 variant: 'standard',
                 purpose: 'tourism',
-                amount: 30000,
+                amount: defaultProduct.defaultAmount || 30000,
                 amountCurrency: 'USD',
                 startDate: tomorrow,
                 endDate: defaultEnd,
@@ -1053,14 +1274,27 @@ const Pages = {
 
             // General contracts
             const gcSelect = document.getElementById('generalContractSelect');
-            if (gcSelect && company) {
-                const contracts = company.generalContracts.filter(gc =>
-                    gc.product === App.contractForm.productType || App.contractForm.productType === ''
-                );
-                gcSelect.innerHTML = contracts.map(gc =>
-                    `<option value="${gc.id}">${gc.number} (${gc.product === 'travel' ? 'ВЗР' : 'ОСТ'})</option>`
-                ).join('');
-                App.contractForm.generalContractId = contracts[0]?.id;
+            if (gcSelect) {
+                const contracts = company?.generalContracts?.filter(gc =>
+                    gc.product === App.contractForm.productType
+                ) || [];
+
+                if (contracts.length === 0) {
+                    gcSelect.disabled = true;
+                    gcSelect.innerHTML = '<option value="">Нет доступного генерального договора для выбранного продукта</option>';
+                    App.contractForm.generalContractId = null;
+                } else {
+                    gcSelect.disabled = false;
+                    gcSelect.innerHTML = contracts.map(gc =>
+                        `<option value="${gc.id}">${gc.number} (${Utils.getProductLabel(gc.product)})</option>`
+                    ).join('');
+
+                    if (!contracts.some(gc => gc.id === App.contractForm.generalContractId)) {
+                        App.contractForm.generalContractId = contracts[0]?.id || null;
+                    }
+
+                    gcSelect.value = App.contractForm.generalContractId || '';
+                }
             }
 
             // Paper blanks
@@ -1118,19 +1352,24 @@ const Pages = {
                 amountSelect.innerHTML = MockData.insuranceAmounts.map(a =>
                     `<option value="${a.value}" data-currency="${a.currency}">${a.label}</option>`
                 ).join('');
-                amountSelect.value = '30000';
+                const match = Array.from(amountSelect.options).find(option =>
+                    Number(option.value) === Number(App.contractForm.amount) &&
+                    option.dataset.currency === (App.contractForm.amountCurrency || 'USD')
+                );
+                if (match) {
+                    match.selected = true;
+                } else {
+                    amountSelect.value = String(App.contractForm.amount || 30000);
+                }
             }
         },
 
         bindEvents() {
-            // Product type change
-            document.querySelectorAll('input[name="productType"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    App.contractForm.productType = e.target.value;
-                    document.getElementById('vzrFields')?.classList.toggle('hidden', e.target.value !== 'travel');
-                    this.populateSelects();
-                    this.updateReview();
-                });
+            // Product selection
+            document.getElementById('productPicker')?.addEventListener('click', (e) => {
+                const option = e.target.closest('.product-option');
+                if (!option) return;
+                this.selectProduct(option.dataset.productId);
             });
 
             // Blank type change
@@ -1168,18 +1407,26 @@ const Pages = {
                 this.updateReview();
             });
 
-            // Other selects
-            ['variantSelect', 'purposeSelect', 'amountSelect', 'generalContractSelect'].forEach(id => {
-                document.getElementById(id)?.addEventListener('change', (e) => {
-                    const key = id.replace('Select', '');
-                    App.contractForm[key === 'generalContract' ? 'generalContractId' : key] = e.target.value;
-                    if (id === 'amountSelect') {
-                        const selected = e.target.selectedOptions[0];
-                        App.contractForm.amount = Number(e.target.value);
-                        App.contractForm.amountCurrency = selected?.dataset.currency || 'USD';
-                    }
-                    this.updateReview();
-                });
+            document.getElementById('variantSelect')?.addEventListener('change', (e) => {
+                App.contractForm.variant = e.target.value;
+                this.updateReview();
+            });
+
+            document.getElementById('purposeSelect')?.addEventListener('change', (e) => {
+                App.contractForm.purpose = e.target.value;
+                this.updateReview();
+            });
+
+            document.getElementById('amountSelect')?.addEventListener('change', (e) => {
+                const selected = e.target.selectedOptions[0];
+                App.contractForm.amount = Number(e.target.value);
+                App.contractForm.amountCurrency = selected?.dataset.currency || 'USD';
+                this.updateReview();
+            });
+
+            document.getElementById('generalContractSelect')?.addEventListener('change', (e) => {
+                App.contractForm.generalContractId = e.target.value || null;
+                this.updateReview();
             });
 
             // Dates
@@ -1478,10 +1725,10 @@ const Pages = {
             const f = App.contractForm;
             this.applyCountryRules();
 
-            document.getElementById('reviewProduct').textContent = f.productType === 'travel' ? 'ВЗР' : 'ОСТ';
+            document.getElementById('reviewProduct').textContent = Utils.getProductLabel(f.productType, { full: true });
             document.getElementById('reviewTerritory').textContent = f.territories.map(t => MockData.countries.find(c => c.code === t)?.name || t).join(', ') || '-';
 
-            if (f.productType === 'travel') {
+            if (Utils.isTravelProduct(f.productType)) {
                 document.getElementById('reviewProgramRow')?.classList.remove('hidden');
                 document.getElementById('reviewAmountRow')?.classList.remove('hidden');
                 const prog = MockData.programs.find(p => p.id === f.program);
@@ -1504,19 +1751,19 @@ const Pages = {
             document.getElementById('reviewKdp').innerHTML = kdpBadge;
 
             // Calculate mock premium
-            const basePremium = f.productType === 'travel' ? 5000 : 3000;
+            const basePremium = Utils.isTravelProduct(f.productType) ? 5000 : 3000;
             const amountMultiplier = (f.amount || 10000) / 10000;
             const days = Utils.daysBetween(f.startDate, f.endDate) || 1;
             const personMultiplier = Math.max(1, f.persons.length);
             const countryRule = this.resolveCountryRules();
             const usdRate = CurrencyTicker.rates.USD.rate;
-            const productRate = f.productType === 'travel' ? usdRate * 1.03 : usdRate;
+            const productRate = Utils.isTravelProduct(f.productType) ? usdRate * 1.03 : usdRate;
             const premium = Math.round(basePremium * amountMultiplier * (days / 7) * personMultiplier * countryRule.rateFactor * (productRate / 475));
             App.contractForm.premium = premium;
             document.getElementById('reviewPremium').textContent = Utils.formatCurrency(premium);
 
             // Enable/disable activate button
-            const canActivate = f.territories.length > 0 && f.persons.length > 0 && f.kdpConfirmed && f.startDate && f.endDate && Utils.daysBetween(f.startDate, f.endDate) > 0;
+            const canActivate = !!(f.generalContractId && f.territories.length > 0 && f.persons.length > 0 && f.kdpConfirmed && f.startDate && f.endDate && Utils.daysBetween(f.startDate, f.endDate) > 0);
             document.getElementById('activateBtn').disabled = !canActivate;
         },
 
@@ -1544,6 +1791,7 @@ const Pages = {
             const f = App.contractForm;
 
             // Validation
+            if (!f.generalContractId) { Toast.error('Для выбранного продукта отсутствует генеральный договор'); return; }
             if (f.territories.length === 0) { Toast.error('Выберите территорию'); return; }
             if (f.persons.length === 0) { Toast.error('Добавьте застрахованных'); return; }
             if (!f.kdpConfirmed) { Toast.error('Необходимо получить КДП'); return; }
@@ -1608,9 +1856,20 @@ const Pages = {
     // REPORTS PAGE
     'reports': {
         init() {
+            this.populateProductFilter();
             this.populateFilters();
             this.render();
             this.bindEvents();
+        },
+
+        populateProductFilter() {
+            const productSelect = document.getElementById('reportProductFilter');
+            if (!productSelect) return;
+
+            productSelect.innerHTML = '<option value="">Все</option>' +
+                (MockData.productCatalog || []).map(product =>
+                    `<option value="${product.id}">${product.shortName || product.code || product.name}</option>`
+                ).join('');
         },
 
         populateFilters() {
@@ -1660,7 +1919,7 @@ const Pages = {
                     <tr>
                         <td>${Utils.formatDate(c.createdAt)}</td>
                         <td>${c.policyNumber || c.id}</td>
-                        <td>${c.type === 'travel' ? 'ВЗР' : 'ОСТ'}</td>
+                        <td>${Utils.getProductLabel(c.type)}</td>
                         <td>${company?.name || '-'}</td>
                         <td>${c.territories?.join(', ') || '-'}</td>
                         <td><span class="status-badge" style="color: ${statusInfo?.color}">${statusInfo?.name || c.status}</span></td>

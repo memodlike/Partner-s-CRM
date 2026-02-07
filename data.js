@@ -284,6 +284,35 @@ const USERS = [
 // REFERENCE DICTIONARIES
 // =============================================================================
 
+const PRODUCT_CATALOG = [
+    {
+        id: 'travel',
+        code: 'ВЗР',
+        name: 'Выезжающие за рубеж',
+        shortName: 'ВЗР',
+        icon: '✈︎',
+        description: 'Оформление страхования путешественников с выбором программ, целей и территорий.',
+        audience: 'Для туроператоров и агентских продаж',
+        layout: 'travel',
+        defaultAmount: 30000,
+        theme: 'ocean',
+        recommended: true
+    },
+    {
+        id: 'mandatory',
+        code: 'ОСТ',
+        name: 'Обязательное страхование туриста',
+        shortName: 'ОСТ',
+        icon: '🛡',
+        description: 'Быстрое оформление обязательного покрытия по стандартным условиям.',
+        audience: 'Для стандартных обязательных продуктов',
+        layout: 'basic',
+        defaultAmount: 30000,
+        theme: 'sunset',
+        recommended: false
+    }
+];
+
 const COUNTRIES = [
     { code: 'TR', name: 'Турция', popular: true },
     { code: 'AE', name: 'ОАЭ', popular: true },
@@ -856,6 +885,7 @@ const MockData = {
     tourCompanies: TOUR_COMPANIES,
     roles: ROLES,
     users: USERS,
+    productCatalog: PRODUCT_CATALOG,
     countries: COUNTRIES,
     countryRules: COUNTRY_RULES,
     purposeOfTrip: PURPOSE_OF_TRIP,
