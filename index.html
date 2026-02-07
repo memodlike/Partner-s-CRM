@@ -363,7 +363,7 @@
                     </div>
 
                     <div class="card contract-block contract-block-details">
-                        <div class="form-section" id="stepDetails">
+                        <div class="form-section contract-subblock" id="stepDetails">
                             <h3 class="card-title mb-5">Данные оформления</h3>
 
                             <div class="form-group" id="generalContractGroup">
@@ -389,16 +389,14 @@
                             </div>
                         </div>
 
-                        <div class="contract-divider"></div>
-
                         <!-- Step 2: Coverage Details -->
-                        <div class="form-section" id="stepCoverage">
+                        <div class="form-section contract-subblock" id="stepCoverage">
                         <h3 class="card-title mb-5">Параметры страхования</h3>
 
                         <!-- Territories -->
                         <div class="form-group">
                             <label class="form-label required">Территория покрытия (максимум 3 страны)</label>
-                            <div id="territoriesContainer" class="flex gap-2 flex-wrap mb-2">
+                            <div id="territoriesContainer" class="territory-tags">
                                 <!-- Tags added here -->
                             </div>
                             <select class="form-select" id="territorySelect">
@@ -469,10 +467,8 @@
                         </div>
                         </div>
 
-                        <div class="contract-divider"></div>
-
                         <!-- Step 3: Insured Persons -->
-                        <div class="form-section" id="stepPersons">
+                        <div class="form-section contract-subblock" id="stepPersons">
                         <h3 class="card-title mb-5">Застрахованные лица <span class="text-secondary font-normal"
                                 id="personsCounter">(0 / 5)</span></h3>
 
@@ -510,9 +506,8 @@
                         </div>
 
                         <!-- Actions -->
-                        <div class="flex justify-between items-center gap-4 mt-8 pt-7"
-                            style="border-top: 1px solid var(--color-divider);">
-                            <button type="button" class="btn btn-secondary" id="saveDraftBtn">
+                        <div class="contract-actions">
+                            <button type="button" class="btn contract-action-btn contract-action-btn-draft" id="saveDraftBtn">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
@@ -521,7 +516,7 @@
                                 </svg>
                                 Сохранить черновик
                             </button>
-                            <button type="button" class="btn btn-primary btn-lg" id="activateBtn" disabled>
+                            <button type="button" class="btn contract-action-btn contract-action-btn-activate" id="activateBtn" disabled>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <polyline points="20 6 9 17 4 12" />

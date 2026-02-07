@@ -600,6 +600,206 @@ const Theme = {
 };
 
 // =============================================================================
+// CUSTOM SELECTS (Project-native dropdowns)
+// =============================================================================
+
+const CustomSelect = {
+    instances: new Map(),
+    initialized: false,
+
+    init() {
+        if (this.initialized) return;
+        this.initialized = true;
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.custom-select')) {
+                this.closeAll();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.closeAll();
+        });
+    },
+
+    initWithin(root = document) {
+        this.init();
+        this.cleanup();
+        root.querySelectorAll('select.form-select:not([data-no-custom-select])').forEach(select => {
+            this.enhance(select);
+        });
+    },
+
+    syncWithin(root = document) {
+        root.querySelectorAll('select.form-select[data-custom-select-id]').forEach(select => {
+            this.syncSelect(select);
+        });
+    },
+
+    syncSelect(select) {
+        const instance = this.instances.get(select);
+        if (!instance) return;
+        this.renderOptions(select, instance.dropdown);
+        this.updateLabel(select, instance.label);
+        this.updateDisabled(select, instance.trigger);
+    },
+
+    cleanup() {
+        for (const [select, instance] of this.instances.entries()) {
+            if (document.contains(select)) continue;
+            instance.observer?.disconnect();
+            this.instances.delete(select);
+        }
+    },
+
+    enhance(select) {
+        if (!select || this.instances.has(select)) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select';
+        wrapper.setAttribute('data-custom-select-id', Utils.generateId('cselect'));
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'custom-select-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+
+        const label = document.createElement('span');
+        label.className = 'custom-select-trigger-label';
+
+        const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        chevron.setAttribute('class', 'custom-select-chevron');
+        chevron.setAttribute('viewBox', '0 0 24 24');
+        chevron.setAttribute('fill', 'none');
+        chevron.setAttribute('stroke', 'currentColor');
+        chevron.setAttribute('stroke-width', '2');
+        const chevronPath = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        chevronPath.setAttribute('points', '6 9 12 15 18 9');
+        chevron.appendChild(chevronPath);
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'custom-select-dropdown';
+        dropdown.setAttribute('role', 'listbox');
+        dropdown.tabIndex = -1;
+
+        trigger.append(label, chevron);
+        wrapper.append(trigger, dropdown);
+        select.insertAdjacentElement('afterend', wrapper);
+        select.classList.add('custom-select-native');
+
+        const onOptionClick = (e) => {
+            const optionEl = e.target.closest('.custom-select-option');
+            if (!optionEl || optionEl.classList.contains('disabled')) return;
+            const value = optionEl.dataset.value;
+            if (select.value !== value) {
+                select.value = value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            } else {
+                this.updateLabel(select, label);
+            }
+            this.close(wrapper, trigger);
+        };
+
+        const onTriggerClick = () => {
+            if (trigger.disabled) return;
+            if (wrapper.classList.contains('open')) {
+                this.close(wrapper, trigger);
+                return;
+            }
+            this.open(wrapper, trigger);
+        };
+
+        trigger.addEventListener('click', onTriggerClick);
+        dropdown.addEventListener('click', onOptionClick);
+        dropdown.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.close(wrapper, trigger);
+        });
+
+        select.addEventListener('change', () => {
+            this.updateLabel(select, label);
+            this.highlightSelected(select, dropdown);
+        });
+
+        const observer = new MutationObserver(() => {
+            this.syncSelect(select);
+        });
+        observer.observe(select, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['disabled', 'label', 'selected']
+        });
+
+        const instance = { wrapper, trigger, label, dropdown, observer };
+        this.instances.set(select, instance);
+        select.dataset.customSelectId = wrapper.dataset.customSelectId;
+        this.syncSelect(select);
+    },
+
+    renderOptions(select, dropdown) {
+        const fragments = [];
+        Array.from(select.children).forEach(node => {
+            if (node.tagName === 'OPTGROUP') {
+                const group = document.createElement('div');
+                group.className = 'custom-select-group';
+                group.textContent = node.label || '';
+                fragments.push(group);
+                Array.from(node.children).forEach(option => fragments.push(this.createOptionElement(option, select.value)));
+            } else if (node.tagName === 'OPTION') {
+                fragments.push(this.createOptionElement(node, select.value));
+            }
+        });
+        dropdown.innerHTML = '';
+        fragments.forEach(item => dropdown.appendChild(item));
+    },
+
+    createOptionElement(option, selectedValue) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'custom-select-option';
+        button.dataset.value = option.value;
+        button.textContent = option.textContent || '';
+        if (option.disabled) button.classList.add('disabled');
+        if (option.value === selectedValue) button.classList.add('selected');
+        return button;
+    },
+
+    updateLabel(select, label) {
+        const selectedOption = select.selectedOptions[0];
+        label.textContent = selectedOption?.textContent || 'Выберите...';
+    },
+
+    updateDisabled(select, trigger) {
+        trigger.disabled = !!select.disabled;
+    },
+
+    highlightSelected(select, dropdown) {
+        dropdown.querySelectorAll('.custom-select-option').forEach(el => {
+            el.classList.toggle('selected', el.dataset.value === select.value);
+        });
+    },
+
+    open(wrapper, trigger) {
+        this.closeAll();
+        wrapper.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+    },
+
+    close(wrapper, trigger) {
+        wrapper.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+    },
+
+    closeAll() {
+        document.querySelectorAll('.custom-select.open').forEach(wrapper => {
+            const trigger = wrapper.querySelector('.custom-select-trigger');
+            this.close(wrapper, trigger);
+        });
+    }
+};
+
+// =============================================================================
 // CRM SIMULATOR (Mock API)
 // =============================================================================
 
@@ -708,6 +908,7 @@ window.AuditLog = AuditLog;
 window.Modal = Modal;
 window.Drawer = Drawer;
 window.Theme = Theme;
+window.CustomSelect = CustomSelect;
 window.CRMSimulator = CRMSimulator;
 
 // =============================================================================
@@ -801,6 +1002,7 @@ const Router = {
 
         // Initialize page-specific logic
         Pages[routeName]?.init?.();
+        CustomSelect.initWithin(main);
     },
 
     applyPageTransition(pageRoot) {
@@ -1374,6 +1576,8 @@ const Pages = {
                     amountSelect.value = String(App.contractForm.amount || 30000);
                 }
             }
+
+            CustomSelect.syncWithin(document.getElementById('mainContent'));
         },
 
         bindEvents() {
@@ -1399,9 +1603,11 @@ const Pages = {
                         this.updateReview();
                     }
                     e.target.value = '';
+                    CustomSelect.syncSelect(e.target);
                 } else if (App.contractForm.territories.length >= App.settings.maxTerritories) {
                     Toast.warning(`Максимум ${App.settings.maxTerritories} страны`);
                     e.target.value = '';
+                    CustomSelect.syncSelect(e.target);
                 }
             });
 
@@ -1485,8 +1691,8 @@ const Pages = {
             container.innerHTML = App.contractForm.territories.map(code => {
                 const country = MockData.countries.find(c => c.code === code);
                 return `
-                    <span class="tag">
-                        ${country?.name || code}
+                    <span class="territory-chip">
+                        <span class="territory-chip-label">${country?.name || code}</span>
                         <button class="tag-remove" onclick="Pages['new-contract'].removeTerritory('${code}')" aria-label="Удалить">×</button>
                     </span>
                 `;
@@ -1575,6 +1781,7 @@ const Pages = {
                     if (targetOption) {
                         targetOption.selected = true;
                     }
+                    CustomSelect.syncSelect(amountSelect);
                 }
                 Toast.info(`Сумма скорректирована: минимум ${minAmount.toLocaleString('ru-RU')} ${currency} для выбранных стран`);
             }
