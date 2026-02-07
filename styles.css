@@ -348,6 +348,25 @@ textarea:focus-visible {
     gap: var(--space-1);
 }
 
+.brandmark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 166px;
+    height: 18px;
+    color: #000000;
+}
+
+.brandmark-svg {
+    display: block;
+    width: 166px;
+    height: 18px;
+}
+
+[data-theme="dark"] .brandmark {
+    color: #ffffff;
+}
+
 .nav-link {
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-control);
@@ -2813,6 +2832,16 @@ textarea:focus-visible {
     .review-panel {
         position: static;
         top: auto;
+    }
+
+    .brandmark {
+        width: 148px;
+        height: 16px;
+    }
+
+    .brandmark-svg {
+        width: 148px;
+        height: 16px;
     }
 }
 
