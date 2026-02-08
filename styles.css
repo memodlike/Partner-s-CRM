@@ -9,6 +9,16 @@
    ============================================================================= */
 
 :root {
+    /* SINOASIA Brand */
+    --brand-primary: #006A4E;
+    --brand-accent-mint: #62CDA8;
+    --brand-mint-tint-1: #A5E5C6;
+    --brand-mint-tint-2: #DAFFED;
+    --brand-overlay-primary-12: rgba(0, 106, 78, 0.12);
+    --brand-overlay-primary-20: rgba(0, 106, 78, 0.20);
+    --brand-overlay-mint-12: rgba(98, 205, 168, 0.12);
+    --brand-overlay-mint-20: rgba(98, 205, 168, 0.20);
+
     /* Typography */
     /* Modern System Font Stack */
     --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -91,9 +101,13 @@
     --color-border-strong: rgba(0, 0, 0, 0.16);
     --color-divider: rgba(0, 0, 0, 0.06);
 
-    --color-primary: #0071e3;
-    --color-primary-hover: #0077ed;
-    --color-primary-active: #006edb;
+    --color-primary: var(--brand-primary);
+    --color-primary-hover: var(--brand-primary);
+    --color-primary-active: var(--brand-primary);
+    --color-link-hover-bg: var(--brand-overlay-primary-12);
+    --color-focus-ring: var(--brand-overlay-mint-20);
+    --color-selected-bg: var(--brand-overlay-mint-12);
+    --color-highlight-bg: var(--brand-mint-tint-2);
 
     --color-success: #34c759;
     --color-success-bg: rgba(52, 199, 89, 0.12);
@@ -139,9 +153,13 @@
     --color-border-strong: rgba(255, 255, 255, 0.18);
     --color-divider: rgba(255, 255, 255, 0.08);
 
-    --color-primary: #0a84ff;
-    --color-primary-hover: #409cff;
-    --color-primary-active: #0077ed;
+    --color-primary: var(--brand-primary);
+    --color-primary-hover: var(--brand-primary);
+    --color-primary-active: var(--brand-primary);
+    --color-link-hover-bg: var(--brand-overlay-primary-12);
+    --color-focus-ring: var(--brand-overlay-mint-20);
+    --color-selected-bg: var(--brand-overlay-mint-12);
+    --color-highlight-bg: var(--brand-overlay-mint-12);
 
     --color-success: #30d158;
     --color-success-bg: rgba(48, 209, 88, 0.16);
@@ -202,11 +220,15 @@ body {
 a {
     color: var(--color-primary);
     text-decoration: none;
-    transition: color var(--transition-fast);
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+    border-radius: 6px;
 }
 
 a:hover {
     color: var(--color-primary-hover);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    background: var(--color-link-hover-bg);
 }
 
 button {
@@ -237,7 +259,7 @@ img {
 
 /* Focus States (Accessibility) */
 :focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--brand-accent-mint);
     outline-offset: 2px;
 }
 
@@ -245,7 +267,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--brand-accent-mint);
     outline-offset: 2px;
 }
 
@@ -338,7 +360,7 @@ textarea:focus-visible {
 .nav-brand-icon {
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, var(--color-primary), #5856d6);
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent-mint));
     border-radius: var(--radius-control);
     display: flex;
     align-items: center;
@@ -385,12 +407,12 @@ textarea:focus-visible {
 .nav-link:hover {
     color: var(--color-text-primary);
     background: var(--color-bg-secondary);
+    text-decoration: none;
 }
 
 .nav-link.active {
     color: var(--color-primary);
-    background: var(--color-primary);
-    background: rgba(0, 113, 227, 0.1);
+    background: var(--color-selected-bg);
 }
 
 .nav-actions {
@@ -485,11 +507,12 @@ textarea:focus-visible {
 .sidebar-link:hover {
     color: var(--color-text-primary);
     background: var(--color-bg-secondary);
+    text-decoration: none;
 }
 
 .sidebar-link.active {
     color: var(--color-primary);
-    background: rgba(0, 113, 227, 0.12);
+    background: var(--color-selected-bg);
 }
 
 /* Sidebar Icon - Fixed 20px */
@@ -709,23 +732,25 @@ textarea:focus-visible {
 
 .btn-primary:hover:not(:disabled) {
     background: var(--color-primary-hover);
+    box-shadow: inset 0 0 0 999px var(--brand-overlay-primary-12);
     transform: translateY(-1px);
 }
 
 .btn-primary:active:not(:disabled) {
     background: var(--color-primary-active);
+    box-shadow: inset 0 0 0 999px var(--brand-overlay-primary-20);
     transform: translateY(0);
 }
 
 .btn-secondary {
-    background: var(--color-bg-secondary);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: var(--color-bg-tertiary);
-    border-color: var(--color-border-strong);
+    background: var(--brand-overlay-primary-12);
+    border-color: var(--color-primary);
 }
 
 .action-inline-btn {
@@ -756,28 +781,28 @@ textarea:focus-visible {
 }
 
 .action-inline-btn-kdp {
-    color: #2d4763;
-    background: linear-gradient(180deg, #edf3f9 0%, #e4edf6 100%);
-    border-color: #cfdae7;
+    color: var(--color-primary);
+    background: linear-gradient(180deg, var(--brand-mint-tint-2) 0%, #eefcf6 100%);
+    border-color: var(--brand-mint-tint-1);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), var(--shadow-xs);
 }
 
 .action-inline-btn-kdp:hover:not(:disabled) {
-    background: linear-gradient(180deg, #f3f7fc 0%, #e9f1f9 100%);
-    border-color: #bccbdb;
+    background: linear-gradient(180deg, #f4fff9 0%, var(--brand-mint-tint-2) 100%);
+    border-color: var(--brand-accent-mint);
     transform: translateY(-1px);
 }
 
 .action-inline-btn-add {
-    color: #2f4f37;
-    background: linear-gradient(180deg, #eef6ef 0%, #e4efe5 100%);
-    border-color: #cfdece;
+    color: var(--color-primary);
+    background: linear-gradient(180deg, #f2fff8 0%, var(--brand-mint-tint-2) 100%);
+    border-color: var(--brand-mint-tint-1);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), var(--shadow-xs);
 }
 
 .action-inline-btn-add:hover:not(:disabled) {
-    background: linear-gradient(180deg, #f3f9f3 0%, #e9f2ea 100%);
-    border-color: #bfd2bf;
+    background: linear-gradient(180deg, #f8fffb 0%, #eafff2 100%);
+    border-color: var(--brand-accent-mint);
     transform: translateY(-1px);
 }
 
@@ -785,6 +810,28 @@ textarea:focus-visible {
     opacity: 0.62;
     cursor: not-allowed;
     transform: none;
+}
+
+.manual-no-iin-flow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.manual-flow-hint {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 24px;
+    padding: 0 10px;
+    border-radius: var(--radius-full);
+    background: var(--color-highlight-bg);
+    border: 1px solid var(--brand-mint-tint-1);
+    color: var(--color-primary);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    line-height: 1;
 }
 
 .btn-ghost {
@@ -889,8 +936,8 @@ textarea:focus-visible {
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(91, 125, 181, 0.2);
+    border-color: var(--brand-accent-mint);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
     outline: none;
 }
 
@@ -941,8 +988,8 @@ textarea:focus-visible {
 }
 
 .custom-select.open .custom-select-trigger {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(91, 125, 181, 0.2);
+    border-color: var(--brand-accent-mint);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .custom-select-trigger:disabled {
@@ -1031,7 +1078,7 @@ textarea:focus-visible {
 }
 
 .custom-select-option.selected {
-    background: rgba(91, 125, 181, 0.18);
+    background: var(--color-selected-bg);
     color: var(--color-primary);
     font-weight: var(--font-weight-semibold);
 }
@@ -1092,30 +1139,57 @@ textarea:focus-visible {
     border-color: rgba(201, 210, 227, 0.24);
 }
 
+[data-theme="dark"] a {
+    color: var(--brand-accent-mint);
+}
+
+[data-theme="dark"] a:hover {
+    color: #dff8ee;
+    background: var(--brand-overlay-mint-12);
+}
+
+[data-theme="dark"] .btn-secondary {
+    color: var(--brand-accent-mint);
+    border-color: var(--brand-accent-mint);
+    background: transparent;
+}
+
+[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+    background: var(--brand-overlay-mint-12);
+    border-color: var(--brand-accent-mint);
+}
+
+[data-theme="dark"] .nav-link.active,
+[data-theme="dark"] .sidebar-link.active,
+[data-theme="dark"] .badge-primary,
+[data-theme="dark"] .review-total-value {
+    color: var(--brand-accent-mint);
+}
+
 [data-theme="dark"] .action-inline-btn-kdp {
-    color: #d8e7fa;
-    background: linear-gradient(180deg, rgba(68, 90, 124, 0.76) 0%, rgba(54, 72, 101, 0.84) 100%);
-    border-color: rgba(188, 208, 233, 0.3);
+    color: #dff8ee;
+    background: linear-gradient(180deg, rgba(0, 106, 78, 0.42) 0%, rgba(0, 106, 78, 0.5) 100%);
+    border-color: rgba(98, 205, 168, 0.34);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), var(--shadow-xs);
 }
 
 [data-theme="dark"] .action-inline-btn-kdp:hover:not(:disabled) {
-    background: linear-gradient(180deg, rgba(80, 106, 146, 0.78) 0%, rgba(64, 85, 118, 0.88) 100%);
+    background: linear-gradient(180deg, rgba(0, 106, 78, 0.5) 0%, rgba(0, 106, 78, 0.6) 100%);
 }
 
 [data-theme="dark"] .action-inline-btn-add {
-    color: #d9ecdf;
-    background: linear-gradient(180deg, rgba(66, 97, 73, 0.72) 0%, rgba(51, 78, 57, 0.82) 100%);
-    border-color: rgba(176, 214, 184, 0.28);
+    color: #e7fff5;
+    background: linear-gradient(180deg, rgba(98, 205, 168, 0.2) 0%, rgba(0, 106, 78, 0.38) 100%);
+    border-color: rgba(98, 205, 168, 0.36);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), var(--shadow-xs);
 }
 
 [data-theme="dark"] .action-inline-btn-add:hover:not(:disabled) {
-    background: linear-gradient(180deg, rgba(79, 112, 86, 0.74) 0%, rgba(62, 92, 69, 0.86) 100%);
+    background: linear-gradient(180deg, rgba(98, 205, 168, 0.24) 0%, rgba(0, 106, 78, 0.44) 100%);
 }
 
 [data-theme="dark"] .custom-select.open .custom-select-trigger {
-    box-shadow: 0 0 0 3px rgba(134, 154, 192, 0.28);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 [data-theme="dark"] .custom-select-dropdown {
@@ -1124,17 +1198,23 @@ textarea:focus-visible {
 }
 
 [data-theme="dark"] .custom-select-option:hover {
-    background: rgba(134, 154, 192, 0.16);
+    background: var(--brand-overlay-mint-12);
 }
 
 [data-theme="dark"] .custom-select-option.selected {
-    background: rgba(134, 154, 192, 0.22);
-    color: #dbe5f7;
+    background: var(--color-selected-bg);
+    color: #dff8ee;
 }
 
 [data-theme="dark"] .territory-chip {
     background: linear-gradient(180deg, rgba(60, 78, 113, 0.68) 0%, rgba(44, 58, 82, 0.82) 100%);
     border-color: rgba(201, 210, 227, 0.24);
+}
+
+[data-theme="dark"] .manual-flow-hint {
+    background: var(--color-highlight-bg);
+    border-color: var(--brand-overlay-mint-20);
+    color: #dff8ee;
 }
 
 .form-input.success {
@@ -1260,7 +1340,7 @@ textarea:focus-visible {
 
 .contract-action-btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(91, 125, 181, 0.24);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .contract-action-btn-draft {
@@ -1280,12 +1360,12 @@ textarea:focus-visible {
     min-width: 260px;
     background: linear-gradient(180deg, var(--color-primary-hover) 0%, var(--color-primary) 100%);
     color: #fff;
-    box-shadow: 0 8px 18px rgba(91, 125, 181, 0.28);
+    box-shadow: 0 8px 18px var(--brand-overlay-primary-20);
 }
 
 .contract-action-btn-activate:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 10px 22px rgba(91, 125, 181, 0.34);
+    box-shadow: 0 10px 22px var(--brand-overlay-primary-20);
 }
 
 .contract-action-btn-activate:disabled {
@@ -1306,7 +1386,7 @@ textarea:focus-visible {
 }
 
 [data-theme="dark"] .contract-action-btn:focus-visible {
-    box-shadow: 0 0 0 3px rgba(134, 154, 192, 0.34);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 [data-theme="dark"] .contract-action-btn-draft {
@@ -1410,7 +1490,7 @@ textarea:focus-visible {
 
 .product-option.active {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 1px rgba(0, 113, 227, 0.35), var(--shadow-md);
+    box-shadow: 0 0 0 1px var(--brand-overlay-primary-20), var(--shadow-md);
     animation: productSelectedPulse 260ms ease;
 }
 
@@ -1485,7 +1565,7 @@ textarea:focus-visible {
     font-size: 11px;
     font-weight: var(--font-weight-semibold);
     line-height: 1.2;
-    background: rgba(0, 113, 227, 0.12);
+    background: var(--brand-overlay-primary-12);
     color: var(--color-primary);
 }
 
@@ -1530,7 +1610,7 @@ textarea:focus-visible {
 }
 
 [data-theme="dark"] .product-option-code {
-    color: #78a7ff;
+    color: var(--brand-accent-mint);
 }
 
 /* Toggle Switch */
@@ -1577,7 +1657,7 @@ textarea:focus-visible {
 }
 
 .toggle input:focus-visible+.toggle-slider {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--brand-accent-mint);
     outline-offset: 2px;
 }
 
@@ -1643,7 +1723,7 @@ textarea:focus-visible {
 }
 
 .badge-primary {
-    background: rgba(0, 113, 227, 0.12);
+    background: var(--brand-overlay-primary-12);
     color: var(--color-primary);
 }
 
@@ -2171,7 +2251,7 @@ textarea:focus-visible {
 }
 
 .role-option.active {
-    background: rgba(0, 113, 227, 0.1);
+    background: var(--color-selected-bg);
 }
 
 .role-option-name {
@@ -2772,7 +2852,7 @@ textarea:focus-visible {
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
-    background: linear-gradient(135deg, rgba(91, 125, 181, 0.08) 0%, rgba(91, 125, 181, 0) 48%);
+    background: linear-gradient(135deg, var(--brand-overlay-primary-12) 0%, rgba(0, 106, 78, 0) 48%);
 }
 
 .person-card:hover {
@@ -2848,9 +2928,9 @@ textarea:focus-visible {
 }
 
 .person-pill-age {
-    background: rgba(91, 125, 181, 0.14);
-    border-color: rgba(91, 125, 181, 0.28);
-    color: #2a4d7f;
+    background: var(--brand-overlay-primary-12);
+    border-color: var(--brand-overlay-primary-20);
+    color: var(--color-primary);
 }
 
 .person-pill-no-iin {
