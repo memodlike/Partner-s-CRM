@@ -145,6 +145,29 @@ const Utils = {
         return div.innerHTML;
     },
 
+    // Apple-like system icon set (SF Symbols style)
+    getSystemIcon(name, options = {}) {
+        const size = Number(options.size) || 16;
+        const strokeWidth = options.strokeWidth || 1.9;
+        const className = options.className ? ` class="${options.className}"` : '';
+        const base = `<svg${className} width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">`;
+
+        switch (name) {
+            case 'download':
+                return `${base}<path d="M12 3v11"/><path d="m8 10 4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>`;
+            case 'xmark-circle':
+                return `${base}<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6"/><path d="m15 9-6 6"/></svg>`;
+            case 'nosign':
+                return `${base}<circle cx="12" cy="12" r="9"/><path d="M8.5 8.5 15.5 15.5"/></svg>`;
+            case 'pencil':
+                return `${base}<path d="M12 20h9"/><path d="m16.5 3.5 4 4L8 20l-5 1 1-5Z"/></svg>`;
+            case 'xmark':
+                return `${base}<path d="m18 6-12 12"/><path d="m6 6 12 12"/></svg>`;
+            default:
+                return `${base}<circle cx="12" cy="12" r="9"/></svg>`;
+        }
+    },
+
     getProductMeta(productId) {
         const product = (MockData.productCatalog || []).find(p => p.id === productId);
         if (product) return product;
@@ -1124,21 +1147,66 @@ const Pages = {
     // LOGIN PAGE
     'login': {
         init() {
+            const loginBrandmark = document.getElementById('loginBrandmark');
+            const navBrandmark = document.querySelector('#navbar .brandmark');
+            if (loginBrandmark && navBrandmark) {
+                loginBrandmark.innerHTML = navBrandmark.innerHTML;
+            }
+
+            const emailInput = document.getElementById('loginEmail');
+            const passwordInput = document.getElementById('loginPassword');
+            const emailPopover = document.getElementById('loginEmailPopover');
+            const passwordPopover = document.getElementById('loginPasswordPopover');
+
+            const setFieldMessage = (input, popover, message = '') => {
+                if (!input || !popover) return;
+                popover.textContent = message;
+                const hasMessage = Boolean(message);
+                popover.classList.toggle('visible', hasMessage);
+                input.classList.toggle('error', hasMessage);
+            };
+
+            const validateEmail = () => {
+                const value = (emailInput?.value || '').trim();
+                // Email is optional for demo login flow; validate only if user entered it.
+                if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                    setFieldMessage(emailInput, emailPopover, 'Формат email некорректный');
+                    return false;
+                }
+                setFieldMessage(emailInput, emailPopover, '');
+                return true;
+            };
+
+            const validatePassword = () => {
+                // Password is optional for demo login flow.
+                setFieldMessage(passwordInput, passwordPopover, '');
+                return true;
+            };
+
+            emailInput?.addEventListener('blur', validateEmail);
+            emailInput?.addEventListener('input', () => {
+                if (emailPopover?.classList.contains('visible')) validateEmail();
+            });
+            passwordInput?.addEventListener('blur', validatePassword);
+            passwordInput?.addEventListener('input', () => {
+                if (passwordPopover?.classList.contains('visible')) validatePassword();
+            });
+
             document.getElementById('loginForm')?.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const email = document.getElementById('loginEmail').value;
+                const email = (emailInput?.value || '').trim();
+                validateEmail();
+                validatePassword();
 
-                // Find user by email or use first operator
-                let user = MockData.users.find(u => u.email === email);
-                if (!user) {
-                    user = MockData.users.find(u => u.role === 'operator_partner');
-                }
+                // Password is ignored; default login is always superadmin.
+                let user = MockData.users.find(u => u.role === 'owner');
+                if (!user) return;
 
                 if (user) {
                     App.currentUser = user;
                     App.currentRole = user.role;
                     RoleSimulator.updateUI();
-                    AuditLog.add('login', 'session', Utils.generateId('sess'), `Вход пользователя ${user.name}`);
+                    AuditLog.add('login', 'session', Utils.generateId('sess'), `Вход пользователя ${user.name}${email ? ` (email: ${email})` : ''}`);
                     Toast.success(`Добро пожаловать, ${user.name}!`);
                     Router.navigate('dashboard');
                 }
@@ -1258,9 +1326,9 @@ const Pages = {
                         <td>${Utils.formatCurrency(c.premium || 0)}</td>
                         <td>
                             <div class="flex gap-2">
-                                ${c.status === 'active' ? `<button class="btn btn-ghost btn-sm" onclick="Pages['contracts'].downloadPdf('${c.id}')" title="Скачать PDF">📄</button>` : ''}
-                                ${canVoid ? `<button class="btn btn-ghost btn-sm" onclick="Pages['contracts'].voidContract('${c.id}')" title="Испортить">❌</button>` : ''}
-                                ${canCancel ? `<button class="btn btn-ghost btn-sm" onclick="Pages['contracts'].cancelContract('${c.id}')" title="Расторгнуть">🚫</button>` : ''}
+                                ${c.status === 'active' ? `<button class="btn btn-ghost btn-sm btn-icon table-action-btn" onclick="Pages['contracts'].downloadPdf('${c.id}')" title="Скачать PDF" aria-label="Скачать PDF">${Utils.getSystemIcon('download', { size: 16 })}</button>` : ''}
+                                ${canVoid ? `<button class="btn btn-ghost btn-sm btn-icon table-action-btn" onclick="Pages['contracts'].voidContract('${c.id}')" title="Испортить" aria-label="Испортить">${Utils.getSystemIcon('xmark-circle', { size: 16 })}</button>` : ''}
+                                ${canCancel ? `<button class="btn btn-ghost btn-sm btn-icon table-action-btn" onclick="Pages['contracts'].cancelContract('${c.id}')" title="Расторгнуть" aria-label="Расторгнуть">${Utils.getSystemIcon('nosign', { size: 16 })}</button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -1332,6 +1400,7 @@ const Pages = {
     'new-contract': {
         init() {
             this.resetForm();
+            this.renderPersons();
             this.renderProductPicker();
             this.populateSelects();
             this.applyProductLayout({ immediate: true });
@@ -1693,7 +1762,7 @@ const Pages = {
                 return `
                     <span class="territory-chip">
                         <span class="territory-chip-label">${country?.name || code}</span>
-                        <button class="tag-remove" onclick="Pages['new-contract'].removeTerritory('${code}')" aria-label="Удалить">×</button>
+                        <button class="tag-remove" onclick="Pages['new-contract'].removeTerritory('${code}')" aria-label="Удалить">${Utils.getSystemIcon('xmark', { size: 12, strokeWidth: 2.1 })}</button>
                     </span>
                 `;
             }).join('');
@@ -1789,6 +1858,35 @@ const Pages = {
             amountHint.textContent = `Минимально допустимо для выбранной территории: ${minAmount.toLocaleString('ru-RU')} ${currency}`;
         },
 
+        generateRandomKazakhPerson(iin) {
+            const maleLastNames = ['Каримов', 'Сериков', 'Жумабеков', 'Турсунов', 'Ахметов', 'Нургалиев', 'Касымов', 'Сапаров'];
+            const femaleLastNames = ['Каримова', 'Серикова', 'Жумабекова', 'Турсунова', 'Ахметова', 'Нургалиева', 'Касымова', 'Сапарова'];
+            const maleFirstNames = ['Мухамеджан', 'Ержан', 'Нуржан', 'Алихан', 'Дастан', 'Бауыржан', 'Арман', 'Рустем'];
+            const femaleFirstNames = ['Айгерим', 'Аружан', 'Динара', 'Жанель', 'Асем', 'Мадина', 'Назым', 'Сауле'];
+            const maleMiddleNames = ['Ерланович', 'Серикович', 'Нурланович', 'Маратович', 'Кайратович', 'Бекетович', 'Жанатович'];
+            const femaleMiddleNames = ['Ерлановна', 'Сериковна', 'Нурлановна', 'Маратовна', 'Кайратовна', 'Бекетовна', 'Жанатовна'];
+
+            const isFemale = Math.random() >= 0.5;
+            const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+            const randomBirthDate = () => {
+                // Realistic range for insured adults
+                const start = new Date('1960-01-01T00:00:00Z').getTime();
+                const end = new Date('2007-12-31T00:00:00Z').getTime();
+                const stamp = Math.floor(Math.random() * (end - start + 1)) + start;
+                return new Date(stamp).toISOString().split('T')[0];
+            };
+
+            return {
+                iin,
+                lastName: isFemale ? pick(femaleLastNames) : pick(maleLastNames),
+                firstName: isFemale ? pick(femaleFirstNames) : pick(maleFirstNames),
+                middleName: isFemale ? pick(femaleMiddleNames) : pick(maleMiddleNames),
+                birthDate: randomBirthDate(),
+                docType: 'id_card',
+                docNumber: '0' + iin.substring(0, 8)
+            };
+        },
+
         async lookupIIN() {
             const iin = document.getElementById('iinInput')?.value;
             if (!Utils.validateIIN(iin)) {
@@ -1802,9 +1900,10 @@ const Pages = {
             }
 
             const requestBtn = document.getElementById('requestKdpBtn');
+            const requestBtnLabel = requestBtn?.querySelector('.action-inline-btn-label');
             if (requestBtn) {
                 requestBtn.disabled = true;
-                requestBtn.textContent = 'Ожидание КДП...';
+                if (requestBtnLabel) requestBtnLabel.textContent = 'Ожидание КДП...';
             }
 
             Toast.info('Запрашиваем КДП. После подтверждения автоматически запрашиваем данные из госбазы...');
@@ -1813,7 +1912,7 @@ const Pages = {
                 Toast.error('Не удалось подтвердить КДП. Добавление застрахованного отменено');
                 if (requestBtn) {
                     requestBtn.disabled = false;
-                    requestBtn.textContent = 'Запросить КДП';
+                    if (requestBtnLabel) requestBtnLabel.textContent = 'Запросить КДП';
                 }
                 return;
             }
@@ -1829,38 +1928,29 @@ const Pages = {
                 AuditLog.add('esbd_lookup', 'person', iin, 'Запрос данных из ЕСБД');
                 Toast.success('Данные получены из ЕСБД');
             } else {
-                // Generate mock person
-                const mockPerson = {
-                    iin,
-                    lastName: 'Тестов',
-                    firstName: 'Тест',
-                    middleName: 'Тестович',
-                    birthDate: '1990-01-15',
-                    docType: 'id_card',
-                    docNumber: '0' + iin.substring(0, 8)
-                };
-                App.contractForm.persons.push(mockPerson);
+                const randomPerson = this.generateRandomKazakhPerson(iin);
+                App.contractForm.persons.push(randomPerson);
                 this.renderPersons();
                 this.updateReview();
                 document.getElementById('iinInput').value = '';
-                Toast.info('Лицо добавлено (mock данные)');
+                Toast.info('Лицо добавлено');
             }
 
             if (requestBtn) {
                 requestBtn.disabled = false;
-                requestBtn.textContent = 'Запросить КДП';
+                if (requestBtnLabel) requestBtnLabel.textContent = 'Запросить КДП';
             }
         },
 
         addManualPerson() {
-            const birthDate = document.getElementById('manualBirthDateInput')?.value;
+            const birthDate = Utils.getDateValue('manualBirthDateInput');
             if (!birthDate) {
                 Toast.error('Укажите дату рождения');
                 return;
             }
 
             const age = Utils.getAge(birthDate);
-            if (age === null) {
+            if (age === null || Number.isNaN(age)) {
                 Toast.error('Не удалось определить возраст');
                 return;
             }
@@ -1885,7 +1975,7 @@ const Pages = {
                 docType: 'manual_age_only',
                 docNumber: ''
             });
-            document.getElementById('manualBirthDateInput').value = '';
+            Utils.setDateValue('manualBirthDateInput', '', { silent: true });
             this.renderPersons();
             this.updateReview();
             Toast.success('Застрахованный добавлен в расчёт без ИИН');
@@ -1893,25 +1983,50 @@ const Pages = {
 
         renderPersons() {
             const container = document.getElementById('personsContainer');
+            const formatAge = (birthDate) => {
+                const age = Utils.getAge(birthDate);
+                if (age === null || Number.isNaN(age)) return '-';
+                const mod10 = age % 10;
+                const mod100 = age % 100;
+                let suffix = 'лет';
+                if (mod10 === 1 && mod100 !== 11) suffix = 'год';
+                else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) suffix = 'года';
+                return `${age} ${suffix}`;
+            };
+
             container.innerHTML = App.contractForm.persons.map((p, idx) => `
-                <div class="person-card">
-                    <div class="person-card-avatar">${Utils.getInitials(p.lastName + ' ' + p.firstName)}</div>
+                <div class="person-card ${p.docType === 'manual_age_only' || p.iin === 'N/A' ? 'person-card-no-iin' : ''}" data-person-idx="${idx}" style="animation-delay: ${Math.min(idx * 26, 140)}ms;">
+                    <div class="person-card-avatar ${p.docType === 'manual_age_only' || p.iin === 'N/A' ? 'person-card-avatar-no-iin' : ''}">${Utils.getInitials(p.lastName + ' ' + p.firstName)}</div>
                     <div class="person-card-info">
                         <div class="person-card-name">${p.lastName} ${p.firstName} ${p.middleName || ''}</div>
-                        <div class="person-card-details">${p.iin && p.iin !== 'N/A' ? `ИИН: ${p.iin} • ` : 'Без ИИН • '} ${Utils.formatDate(p.birthDate)}</div>
+                        <div class="person-card-meta">
+                            <span class="person-pill person-pill-age ${p.docType === 'manual_age_only' || p.iin === 'N/A' ? 'person-pill-age-no-iin' : ''}">Возраст: ${formatAge(p.birthDate)}</span>
+                            <span class="person-pill ${p.docType === 'manual_age_only' || p.iin === 'N/A' ? 'person-pill-no-iin' : ''}">${p.iin && p.iin !== 'N/A' ? `ИИН: ${p.iin}` : 'Без ИИН'}</span>
+                            <span class="person-pill">${Utils.formatDate(p.birthDate)}</span>
+                        </div>
+                        <div class="person-card-details">${p.docType === 'manual_age_only' ? 'Добавлен без ИИН для тарификации по возрасту' : 'Данные подтверждены и готовы к оформлению'}</div>
                     </div>
                     <div class="person-card-actions">
-                        <button class="btn btn-ghost btn-sm" onclick="Pages['new-contract'].removePerson(${idx})">❌</button>
+                        <button class="btn btn-ghost btn-sm btn-icon person-action-btn" onclick="Pages['new-contract'].removePerson(${idx}, this.closest('.person-card'))" title="Удалить застрахованного" aria-label="Удалить застрахованного">${Utils.getSystemIcon('xmark-circle', { size: 16 })}</button>
                     </div>
                 </div>
             `).join('');
             document.getElementById('personsCounter').textContent = `(${App.contractForm.persons.length} / ${App.settings.maxPersons})`;
         },
 
-        removePerson(idx) {
-            App.contractForm.persons.splice(idx, 1);
-            this.renderPersons();
-            this.updateReview();
+        removePerson(idx, cardElement) {
+            const removeAndRefresh = () => {
+                App.contractForm.persons.splice(idx, 1);
+                this.renderPersons();
+                this.updateReview();
+            };
+
+            if (cardElement) {
+                cardElement.classList.add('is-removing');
+                window.setTimeout(removeAndRefresh, 210);
+                return;
+            }
+            removeAndRefresh();
         },
 
         requestKDP(options = {}) {
@@ -2287,7 +2402,7 @@ const Pages = {
                         <td>${company?.name || '-'}</td>
                         <td>${region?.name || '-'}</td>
                         <td>
-                            <button class="btn btn-ghost btn-sm" onclick="Toast.info('Редактирование пользователя (mock)')">✏️</button>
+                            <button class="btn btn-ghost btn-sm btn-icon admin-action-btn" onclick="Toast.info('Редактирование пользователя (mock)')" title="Редактировать" aria-label="Редактировать">${Utils.getSystemIcon('pencil', { size: 16 })}</button>
                         </td>
                     </tr>
                 `;

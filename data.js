@@ -276,7 +276,7 @@ const USERS = [
     { id: 'u-18', email: 'curator.astana@insurance.kz', name: 'Фариза Ералиева', role: 'region_curator', companyId: null, regionId: 'reg-2' },
     
     // Global users
-    { id: 'u-19', email: 'owner@insurance.kz', name: 'Хан Болатов', role: 'owner', companyId: null, regionId: null },
+    { id: 'u-19', email: 'owner@insurance.kz', name: 'Каримов Мухамеджан', role: 'owner', companyId: null, regionId: null },
     { id: 'u-20', email: 'assistance@insurance.kz', name: 'Шынар Қасымқызы', role: 'observer_assistance', companyId: null, regionId: null }
 ];
 

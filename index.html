@@ -275,23 +275,20 @@
         <div class="login-page">
             <div class="login-card animate-slide-up">
                 <div class="login-logo">
-                    <div class="login-logo-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                        </svg>
-                    </div>
-                    <h1 class="login-title">Кабинет партнёра</h1>
+                    <div class="brandmark login-brandmark" id="loginBrandmark" aria-label="Sinoasia B&R"></div>
                     <p class="login-subtitle">Вход для туроператоров</p>
                 </div>
 
-                <form id="loginForm">
+                <form id="loginForm" novalidate>
                     <div class="form-group">
                         <label class="form-label" for="loginEmail">Email</label>
                         <input type="email" class="form-input" id="loginEmail" placeholder="operator@company.kz">
+                        <div class="field-popover" id="loginEmailPopover" aria-live="polite"></div>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="loginPassword">Пароль</label>
                         <input type="password" class="form-input" id="loginPassword" placeholder="••••••••">
+                        <div class="field-popover" id="loginPasswordPopover" aria-live="polite"></div>
                     </div>
                     <button type="submit" class="btn btn-primary btn-lg w-full mt-5">
                         Войти
@@ -516,13 +513,13 @@
                             <div class="flex gap-3">
                                 <input type="text" class="form-input" id="iinInput" placeholder="Введите ИИН (12 цифр)"
                                     maxlength="12" style="flex: 1;">
-                                <button type="button" class="btn btn-secondary" id="requestKdpBtn">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <circle cx="11" cy="11" r="8" />
-                                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                <button type="button" class="btn action-inline-btn action-inline-btn-kdp" id="requestKdpBtn">
+                                    <svg class="action-inline-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M12 3l7 3v5c0 4.4-2.6 7.7-7 10-4.4-2.3-7-5.6-7-10V6l7-3z" />
+                                        <path d="m9.5 12.5 1.8 1.8 3.2-3.2" />
                                     </svg>
-                                    Запросить КДП
+                                    <span class="action-inline-btn-label">Запросить КДП</span>
                                 </button>
                             </div>
                             <div class="form-helper">Введите ИИН, запросите КДП, после подтверждения согласия данные автоматически подтянутся из госбазы.</div>
@@ -532,8 +529,14 @@
                             <label class="form-label">Добавить без ИИН (для возрастов &lt; 1 и &gt; 64)</label>
                             <div class="flex gap-3">
                                 <input type="date" class="form-input" id="manualBirthDateInput" style="flex: 1;">
-                                <button type="button" class="btn btn-secondary" id="addManualPersonBtn">
-                                    Добавить в расчёт
+                                <button type="button" class="btn action-inline-btn action-inline-btn-add" id="addManualPersonBtn">
+                                    <svg class="action-inline-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="9"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                                    </svg>
+                                    <span class="action-inline-btn-label">Добавить</span>
                                 </button>
                             </div>
                             <div class="form-helper">Используется для тарификации без ввода ИИН и паспортных данных.</div>
