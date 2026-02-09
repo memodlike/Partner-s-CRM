@@ -20,7 +20,51 @@ const TOUR_COMPANIES = [
         regionId: 'reg-1',
         prefix: 'SRT',
         generalContracts: [
-            { id: 'gc-1', number: 'ГД-2024/001', validFrom: '2024-01-01', validTo: '2025-12-31', product: 'travel' },
+            {
+                id: 'gc-1',
+                number: 'ГД-2024/001',
+                validFrom: '2024-01-01',
+                validTo: '2025-12-31',
+                product: 'travel',
+                corporateBenefitsEnabled: true,
+                allianceTagEnabled: true
+            },
+            {
+                id: 'gc-10',
+                number: 'ГД-2024/010',
+                validFrom: '2024-01-01',
+                validTo: '2025-12-31',
+                product: 'travel',
+                corporateBenefitsEnabled: true,
+                allianceTagEnabled: true
+            },
+            {
+                id: 'gc-11',
+                number: 'ГД-2024/011',
+                validFrom: '2024-01-01',
+                validTo: '2025-12-31',
+                product: 'travel',
+                corporateBenefitsEnabled: true,
+                allianceTagEnabled: true
+            },
+            {
+                id: 'gc-12',
+                number: 'ГД-2024/012 (нулевая премия)',
+                validFrom: '2024-01-01',
+                validTo: '2025-12-31',
+                product: 'travel',
+                corporateBenefitsEnabled: true,
+                allianceTagEnabled: true
+            },
+            {
+                id: 'gc-13',
+                number: 'ГД-2024/013 (нулевая премия)',
+                validFrom: '2024-01-01',
+                validTo: '2025-12-31',
+                product: 'travel',
+                corporateBenefitsEnabled: true,
+                allianceTagEnabled: true
+            },
             { id: 'gc-2', number: 'ГД-2024/002', validFrom: '2024-01-01', validTo: '2025-12-31', product: 'mandatory' }
         ],
         paperBlanks: [
@@ -375,23 +419,37 @@ const PURPOSE_OF_TRIP = [
     { id: 'guest', name: 'Частный визит (гостевой)' },
     { id: 'business', name: 'Бизнес / Деловая поездка' },
     { id: 'education', name: 'Обучение / Стажировка' },
+    { id: 'sport', name: 'Спорт' },
     { id: 'business_tourism', name: 'Деловой туризм' }
 ];
 
 const PROGRAMS = [
     { id: 'base', name: 'Base (Базовая)', multiTrip: false },
-    { id: 'multi_30', name: 'Multi Trip 30', multiTrip: true, maxDaysPerTrip: 30, hint: 'Многократные поездки в течение года, до 30 дней каждая' },
-    { id: 'multi_60', name: 'Multi Trip 60', multiTrip: true, maxDaysPerTrip: 60, hint: 'Многократные поездки в течение года, до 60 дней каждая' },
-    { id: 'multi_90', name: 'Multi Trip 90', multiTrip: true, maxDaysPerTrip: 90, hint: 'Многократные поездки в течение года, до 90 дней каждая' }
+    { id: 'multi_15', name: 'В течение 1 месяца — 15 дней пребывания', multiTrip: true, maxDaysPerTrip: 15, hint: 'Многократные поездки: в течение 1 месяца, каждая до 15 дней.' },
+    { id: 'multi_30', name: 'В течение 3 месяцев — 30 дней пребывания', multiTrip: true, maxDaysPerTrip: 30, hint: 'Многократные поездки: в течение 3 месяцев, каждая до 30 дней.' },
+    { id: 'multi_45', name: 'В течение 6 месяцев — 45 дней пребывания', multiTrip: true, maxDaysPerTrip: 45, hint: 'Многократные поездки: в течение 6 месяцев, каждая до 45 дней.' },
+    { id: 'multi_90', name: 'В течение 12 месяцев — 90 дней пребывания', multiTrip: true, maxDaysPerTrip: 90, hint: 'Многократные поездки: в течение 12 месяцев, каждая до 90 дней.' }
 ];
 
 const PROGRAM_VARIANTS = [
-    { id: 'standard', name: 'Standart', includesCovid: false },
-    { id: 'plus', name: 'Plus', includesCovid: false },
-    { id: 'sport_light', name: 'Sport Light', includesCovid: false, sportLevel: 'amateur' },
-    { id: 'sport_pro', name: 'Sport Pro', includesCovid: false, sportLevel: 'professional' },
-    { id: 'covid', name: '+COVID', includesCovid: true },
-    { id: 'covid_only', name: 'COVID-only', includesCovid: true, covidOnly: true }
+    { id: 'standard', name: 'Стандарт', includesCovid: false },
+    { id: 'plus', name: 'Плюс', includesCovid: false }
+];
+
+const SPORT_TYPES = [
+    { id: 'ski', name: 'Горнолыжный спорт (кроме горных лыж)', rateFactor: 1.25 },
+    { id: 'snowboard', name: 'Горнолыжный спорт / сноуборд', rateFactor: 1.35 },
+    { id: 'diving', name: 'Подводное плавание и/или прыжки в воду', rateFactor: 1.5 },
+    { id: 'moto_auto', name: 'Авто/мото гонки', rateFactor: 1.55 },
+    { id: 'cycling', name: 'Велосипед', rateFactor: 1.2 },
+    { id: 'mountaineering', name: 'Альпинизм/горный туризм/сплав', rateFactor: 1.65 },
+    { id: 'team_games', name: 'Игровые виды спорта', rateFactor: 1.18 },
+    { id: 'athletics', name: 'Лёгкая/тяжёлая атлетика/гимнастика', rateFactor: 1.22 },
+    { id: 'martial', name: 'Единоборства', rateFactor: 1.45 },
+    { id: 'parachute', name: 'Дельтапланеризм/парапланеризм/парашютный спорт', rateFactor: 1.75 },
+    { id: 'horse', name: 'Конный спорт', rateFactor: 1.3 },
+    { id: 'sailing', name: 'Плавание/парусный спорт', rateFactor: 1.28 },
+    { id: 'other', name: 'Другое (указать в комментарии)', rateFactor: 1.2 }
 ];
 
 const INSURANCE_AMOUNTS = [
@@ -781,7 +839,7 @@ for (let i = 11; i <= 40; i++) {
     };
     
     if (isTravel) {
-        contract.program = Math.random() > 0.8 ? 'multi_60' : 'base';
+        contract.program = Math.random() > 0.8 ? 'multi_45' : 'base';
         contract.variant = ['standard', 'plus', 'covid'][Math.floor(Math.random() * 3)];
         contract.purpose = PURPOSE_OF_TRIP[Math.floor(Math.random() * PURPOSE_OF_TRIP.length)].id;
         contract.amount = INSURANCE_AMOUNTS[Math.floor(Math.random() * INSURANCE_AMOUNTS.length)].value;
@@ -891,6 +949,7 @@ const MockData = {
     purposeOfTrip: PURPOSE_OF_TRIP,
     programs: PROGRAMS,
     programVariants: PROGRAM_VARIANTS,
+    sportTypes: SPORT_TYPES,
     insuranceAmounts: INSURANCE_AMOUNTS,
     blankTypes: BLANK_TYPES,
     reasonCodes: REASON_CODES,

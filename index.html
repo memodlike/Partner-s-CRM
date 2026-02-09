@@ -374,8 +374,8 @@
     <template id="newContractPageTemplate">
         <div class="page animate-fade-in">
             <div class="page-header">
-                <h1 class="page-title">Оформление</h1>
-                <p class="page-subtitle">Выберите продукт одним кликом и заполните только нужные поля</p>
+                <h1 class="page-title">Создание нового договора / сертификата ВЗР</h1>
+                <p class="page-subtitle">Минимум кликов: выберите продукт и заполните только нужные поля</p>
             </div>
 
             <!-- Contract Form + Review Panel Layout -->
@@ -402,7 +402,7 @@
 
                         <!-- Territories -->
                         <div class="form-group">
-                            <label class="form-label required">Территория покрытия (максимум 3 страны)</label>
+                            <label class="form-label required">Территория покрытия (максимально 3 страны)</label>
                             <div id="territoriesContainer" class="territory-tags">
                                 <!-- Tags added here -->
                             </div>
@@ -441,10 +441,16 @@
                                     <!-- Populated by JS -->
                                 </select>
                                 <div class="form-helper">
-                                    Дополнительно покрываются: самодеятельный туризм, любительский спорт, серфинг, спортивные игры, аквапарки,
-                                    водные активности, вело- и пешие маршруты, пещеры, джип-сафари, поездки на животных, пляжные виды спорта,
-                                    кемпинг и другие аналогичные активности (до 3 страховых случаев).
+                                    Покрываются: самодеятельный туризм, любительский спорт, серфинг, виндсерфинг, спортивные игры, аквапарки, водные активности, водные лыжи, водные мотоциклы, вело- и пешие маршруты, пещеры, джип-сафари, поездки на животных, пляжные виды спорта, кемпинг и другие аналогичные активности (до 3 страховых случаев).
                                 </div>
+                            </div>
+
+                            <div class="form-group hidden" id="sportTypeGroup">
+                                <label class="form-label required">Вид спорта</label>
+                                <select class="form-select" id="sportTypeSelect">
+                                    <!-- Populated by JS -->
+                                </select>
+                                <div class="form-helper">Выбор вида спорта влияет на расчет премии.</div>
                             </div>
 
                             <div class="form-group">
@@ -478,6 +484,30 @@
                         <div class="form-section contract-subblock" id="stepPersons">
                         <h3 class="card-title mb-5">Застрахованные лица <span class="text-secondary font-normal"
                                 id="personsCounter">(0 / 5)</span></h3>
+
+                        <div class="form-group person-calculator-block" id="personsCalculatorBlock">
+                            <label class="form-label">Калькулятор количества (без верификации)</label>
+                            <div class="person-inline-grid person-inline-grid-calc">
+                                <select class="form-select" id="calculatorAgeGroupSelect">
+                                    <option value="u1">До 1 года</option>
+                                    <option value="1_64">От 1 до 64 лет</option>
+                                    <option value="o64">Старше 64 лет</option>
+                                </select>
+                                <input type="number" class="form-input" id="manualPersonsCountInput" min="1" max="5" step="1" placeholder="Количество лиц">
+                                <button type="button" class="btn action-inline-btn action-inline-btn-add" id="addManualPersonsBatchBtn">
+                                    <svg class="action-inline-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M9 7a3 3 0 1 0 0.001 0z" />
+                                        <path d="M15 7a3 3 0 1 0 0.001 0z" />
+                                        <path d="M4 19a5 5 0 0 1 10 0" />
+                                        <path d="M10 19h10" />
+                                        <path d="M17 15v8" />
+                                    </svg>
+                                    <span class="action-inline-btn-label">Добавить в расчёт</span>
+                                </button>
+                            </div>
+                            <div class="form-helper">Добавляет N расчетных карточек до заполнения персональных данных.</div>
+                        </div>
 
                         <div id="personsContainer">
                             <!-- Person cards added here -->
@@ -541,38 +571,23 @@
                                             <span class="action-inline-btn-label">Добавить</span>
                                         </button>
                                     </div>
-                                    <div class="form-helper">Для нерезидентов достаточно ФИО и даты рождения.</div>
+                                    <div class="form-helper">Для нерезидентов требуется бумажное согласие: скачайте бланк, подпишите и загрузите скан.</div>
                                 </div>
-                            </div>
 
-                            <div class="form-group person-calculator-block">
-                                <label class="form-label">Калькулятор количества (без верификации)</label>
-                                <div class="person-inline-grid person-inline-grid-calc">
-                                    <select class="form-select" id="calculatorAgeGroupSelect">
-                                        <option value="u1">До 1 года</option>
-                                        <option value="1_64">От 1 до 64 лет</option>
-                                        <option value="o64">Старше 64 лет</option>
-                                    </select>
-                                    <input type="number" class="form-input" id="manualPersonsCountInput" min="1" max="5" step="1" placeholder="Количество лиц">
-                                    <button type="button" class="btn action-inline-btn action-inline-btn-add" id="addManualPersonsBatchBtn">
-                                        <svg class="action-inline-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <path d="M9 7a3 3 0 1 0 0.001 0z" />
-                                            <path d="M15 7a3 3 0 1 0 0.001 0z" />
-                                            <path d="M4 19a5 5 0 0 1 10 0" />
-                                            <path d="M10 19h10" />
-                                            <path d="M17 15v8" />
-                                        </svg>
-                                        <span class="action-inline-btn-label">Добавить в расчёт</span>
-                                    </button>
+                                <div class="form-group">
+                                    <label class="form-label">Бумажное согласие (КДП)</label>
+                                    <div class="person-inline-grid">
+                                        <button type="button" class="btn btn-secondary" id="downloadNonresidentConsentBtn">Скачать бланк</button>
+                                        <input type="file" class="form-input" id="nonresidentConsentFileInput" accept=".pdf,.doc,.docx">
+                                    </div>
+                                    <div class="form-helper">Допустимые форматы: PDF, DOC, DOCX. Файл до 15 МБ.</div>
                                 </div>
-                                <div class="form-helper">Добавляет N расчётных карточек. Для активации КДП проверяется только у резидентов, добавленных по ИИН.</div>
                             </div>
                         </div>
                         </div>
 
                         <div class="form-section contract-subblock" id="stepFinalOptions">
-                            <h3 class="card-title mb-5">Данные оформления и перед активацией</h3>
+                            <h3 class="card-title mb-5">Параметры оформления и активации</h3>
                             <div class="form-group" id="generalContractGroup">
                                 <label class="form-label required">Генеральный договор</label>
                                 <select class="form-select" id="generalContractSelect">
@@ -591,6 +606,34 @@
                                 <select class="form-select" id="paperBlankSelect">
                                     <!-- Populated by JS -->
                                 </select>
+                            </div>
+                            <div class="form-group hidden" id="corporateDiscountGroup">
+                                <label class="form-label">Информация по корпоративной скидке</label>
+                                <div class="form-group">
+                                    <label class="form-label">Клиентская компания</label>
+                                    <input type="text" class="form-input" id="corpClientCompanyInput" placeholder="Название компании клиента">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3);">
+                                    <div class="form-group">
+                                        <label class="form-label">Корпоративная скидка (0–100%)</label>
+                                        <input type="number" class="form-input" id="corpDiscountInput" min="0" max="100" step="1" placeholder="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Номер договора ДМС</label>
+                                        <input type="text" class="form-input" id="corpDmsContractInput" placeholder="Введите номер договора">
+                                    </div>
+                                </div>
+                                <div class="corporate-bottom-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Корпоративная карта</label>
+                                        <input type="text" class="form-input" id="corpCardInput" placeholder="Номер корпоративной карты">
+                                    </div>
+                                    <label class="form-check corporate-alliance-check">
+                                        <input type="checkbox" class="form-check-input" id="corpAllianceCheckbox">
+                                        <span class="form-check-label">Принадлежность к Альянсу</span>
+                                    </label>
+                                </div>
+                                <div class="form-helper">При заполнении корпоративных полей премия может быть нулевой или со скидкой. Для таких сертификатов КДП не запрашивается.</div>
                             </div>
                         </div>
 

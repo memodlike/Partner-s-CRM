@@ -15,6 +15,7 @@ const App = {
     contracts: [...MockData.contracts],
     auditLog: [...MockData.auditEvents],
     integrationLog: [...MockData.crmIntegrationLog],
+    consentBank: [],
 
     // Contract form state
     contractForm: {
@@ -28,10 +29,17 @@ const App = {
         program: 'base',
         variant: 'standard',
         purpose: 'tourism',
+        sportType: '',
         amount: 30000,
         startDate: '',
         endDate: '',
         persons: [],
+        corporateClientCompany: '',
+        corporateDiscountPercent: 0,
+        corporateDmsNumber: '',
+        corporateCardNumber: '',
+        corporateAlliance: false,
+        nonresidentConsentFile: null,
         kdpConfirmed: false
     },
 
@@ -1284,6 +1292,8 @@ const Pages = {
                 contracts = contracts.filter(c =>
                     (c.policyNumber || '').toLowerCase().includes(q) ||
                     (c.id || '').toLowerCase().includes(q) ||
+                    (c.corporateClientCompany || '').toLowerCase().includes(q) ||
+                    (c.corporateAlliance ? 'альянс' : '').includes(q) ||
                     c.persons?.some(p =>
                         p.lastName?.toLowerCase().includes(q) ||
                         p.firstName?.toLowerCase().includes(q) ||
@@ -1319,7 +1329,10 @@ const Pages = {
                             <div class="font-medium">${c.policyNumber || c.externalId || c.id}</div>
                             <div class="text-xs text-tertiary">${c.id}</div>
                         </td>
-                        <td><span class="badge ${Utils.isTravelProduct(c.type) ? 'badge-primary' : 'badge-info'}">${Utils.getProductLabel(c.type)}</span></td>
+                        <td>
+                            <span class="badge ${Utils.isTravelProduct(c.type) ? 'badge-primary' : 'badge-info'}">${Utils.getProductLabel(c.type)}</span>
+                            ${c.corporateAlliance ? '<span class="badge badge-warning" style="margin-left: 6px;">К Альянс</span>' : ''}
+                        </td>
                         <td>${person ? `${person.lastName} ${person.firstName}` : '-'}</td>
                         <td>${c.territories?.map(t => MockData.countries.find(ct => ct.code === t)?.name || t).join(', ') || '-'}</td>
                         <td>${Utils.formatDate(c.startDate)} - ${Utils.formatDate(c.endDate)}</td>
@@ -1472,11 +1485,13 @@ const Pages = {
             const showTravelFields = Utils.isTravelProduct(App.contractForm.productType);
             const vzrFields = document.getElementById('vzrFields');
             const multiTripHint = document.getElementById('multiTripHint');
+            const sportTypeGroup = document.getElementById('sportTypeGroup');
             if (!vzrFields) return;
 
             if (options.immediate) {
                 vzrFields.classList.toggle('hidden', !showTravelFields);
                 multiTripHint?.classList.toggle('hidden', !showTravelFields || !String(App.contractForm.program).startsWith('multi_'));
+                sportTypeGroup?.classList.toggle('hidden', !(showTravelFields && App.contractForm.purpose === 'sport'));
                 return;
             }
 
@@ -1484,6 +1499,7 @@ const Pages = {
             window.setTimeout(() => {
                 vzrFields.classList.toggle('hidden', !showTravelFields);
                 multiTripHint?.classList.toggle('hidden', !showTravelFields || !String(App.contractForm.program).startsWith('multi_'));
+                sportTypeGroup?.classList.toggle('hidden', !(showTravelFields && App.contractForm.purpose === 'sport'));
                 window.requestAnimationFrame(() => {
                     vzrFields.classList.remove('switching');
                 });
@@ -1528,11 +1544,18 @@ const Pages = {
                 program: 'base',
                 variant: 'standard',
                 purpose: 'tourism',
+                sportType: '',
                 amount: defaultProduct.defaultAmount || 30000,
                 amountCurrency: 'USD',
                 startDate: tomorrow,
                 endDate: defaultEnd,
                 persons: [],
+                corporateClientCompany: '',
+                corporateDiscountPercent: 0,
+                corporateDmsNumber: '',
+                corporateCardNumber: '',
+                corporateAlliance: false,
+                nonresidentConsentFile: null,
                 kdpConfirmed: false,
                 issueDate: Utils.getToday()
             };
@@ -1559,6 +1582,7 @@ const Pages = {
             const ageGroupSelect = document.getElementById('calculatorAgeGroupSelect');
             if (ageGroupSelect) ageGroupSelect.value = 'u1';
             this.setPersonResidencyMode('resident');
+            this.iinLookupInProgress = false;
         },
 
         populateSelects() {
@@ -1630,14 +1654,23 @@ const Pages = {
                 programSelect.innerHTML = MockData.programs.map(p =>
                     `<option value="${p.id}">${p.name}</option>`
                 ).join('');
+                if (!MockData.programs.some(p => p.id === App.contractForm.program)) {
+                    App.contractForm.program = MockData.programs[0]?.id || 'base';
+                }
+                programSelect.value = App.contractForm.program;
             }
 
             // Variants
             const variantSelect = document.getElementById('variantSelect');
             if (variantSelect) {
-                variantSelect.innerHTML = MockData.programVariants.map(v =>
+                const variants = MockData.programVariants.filter(v => ['standard', 'plus'].includes(v.id));
+                variantSelect.innerHTML = variants.map(v =>
                     `<option value="${v.id}">${v.name}</option>`
                 ).join('');
+                if (!variants.some(v => v.id === App.contractForm.variant)) {
+                    App.contractForm.variant = variants[0]?.id || 'standard';
+                }
+                variantSelect.value = App.contractForm.variant;
             }
 
             // Purpose
@@ -1646,6 +1679,21 @@ const Pages = {
                 purposeSelect.innerHTML = MockData.purposeOfTrip.map(p =>
                     `<option value="${p.id}">${p.name}</option>`
                 ).join('');
+                if (!MockData.purposeOfTrip.some(p => p.id === App.contractForm.purpose)) {
+                    App.contractForm.purpose = 'tourism';
+                }
+                purposeSelect.value = App.contractForm.purpose;
+            }
+
+            const sportTypeSelect = document.getElementById('sportTypeSelect');
+            if (sportTypeSelect) {
+                sportTypeSelect.innerHTML = MockData.sportTypes.map(s =>
+                    `<option value="${s.id}">${s.name}</option>`
+                ).join('');
+                if (!MockData.sportTypes.some(s => s.id === App.contractForm.sportType)) {
+                    App.contractForm.sportType = MockData.sportTypes[0]?.id || '';
+                }
+                sportTypeSelect.value = App.contractForm.sportType;
             }
 
             // Amount
@@ -1664,6 +1712,29 @@ const Pages = {
                     amountSelect.value = String(App.contractForm.amount || 30000);
                 }
             }
+
+            const selectedGeneralContract = company?.generalContracts?.find(gc => gc.id === App.contractForm.generalContractId) || null;
+            const corporateEnabled = !!(selectedGeneralContract?.corporateBenefitsEnabled && Utils.isTravelProduct(App.contractForm.productType));
+            if (!corporateEnabled) {
+                App.contractForm.corporateClientCompany = '';
+                App.contractForm.corporateDiscountPercent = 0;
+                App.contractForm.corporateDmsNumber = '';
+                App.contractForm.corporateCardNumber = '';
+                App.contractForm.corporateAlliance = false;
+            }
+            document.getElementById('corporateDiscountGroup')?.classList.toggle('hidden', !corporateEnabled);
+            document.getElementById('sportTypeGroup')?.classList.toggle('hidden', !(App.contractForm.purpose === 'sport' && Utils.isTravelProduct(App.contractForm.productType)));
+
+            const corpClientInput = document.getElementById('corpClientCompanyInput');
+            if (corpClientInput) corpClientInput.value = App.contractForm.corporateClientCompany || '';
+            const corpDiscountInput = document.getElementById('corpDiscountInput');
+            if (corpDiscountInput) corpDiscountInput.value = Number(App.contractForm.corporateDiscountPercent || 0);
+            const corpDmsInput = document.getElementById('corpDmsContractInput');
+            if (corpDmsInput) corpDmsInput.value = App.contractForm.corporateDmsNumber || '';
+            const corpCardInput = document.getElementById('corpCardInput');
+            if (corpCardInput) corpCardInput.value = App.contractForm.corporateCardNumber || '';
+            const corpAllianceCheckbox = document.getElementById('corpAllianceCheckbox');
+            if (corpAllianceCheckbox) corpAllianceCheckbox.checked = !!App.contractForm.corporateAlliance;
 
             CustomSelect.syncWithin(document.getElementById('mainContent'));
         },
@@ -1726,6 +1797,14 @@ const Pages = {
 
             document.getElementById('purposeSelect')?.addEventListener('change', (e) => {
                 App.contractForm.purpose = e.target.value;
+                const isSport = App.contractForm.purpose === 'sport' && Utils.isTravelProduct(App.contractForm.productType);
+                if (isSport && !App.contractForm.sportType) {
+                    App.contractForm.sportType = MockData.sportTypes[0]?.id || '';
+                    const sportTypeSelect = document.getElementById('sportTypeSelect');
+                    if (sportTypeSelect) sportTypeSelect.value = App.contractForm.sportType;
+                }
+                document.getElementById('sportTypeGroup')?.classList.toggle('hidden', !isSport);
+                CustomSelect.syncSelect(document.getElementById('sportTypeSelect'));
                 this.updateReview();
             });
 
@@ -1738,6 +1817,7 @@ const Pages = {
 
             document.getElementById('generalContractSelect')?.addEventListener('change', (e) => {
                 App.contractForm.generalContractId = e.target.value || null;
+                this.populateSelects();
                 this.updateReview();
             });
 
@@ -1766,6 +1846,12 @@ const Pages = {
             document.getElementById('personModeResidentBtn')?.addEventListener('click', () => this.setPersonResidencyMode('resident'));
             document.getElementById('personModeNonresidentBtn')?.addEventListener('click', () => this.setPersonResidencyMode('nonresident'));
             document.getElementById('requestKdpBtn')?.addEventListener('click', () => this.lookupIIN());
+            document.getElementById('iinInput')?.addEventListener('input', (e) => {
+                e.target.value = String(e.target.value || '').replace(/\D/g, '').slice(0, 12);
+                if (e.target.value.length === 12) {
+                    this.lookupIIN({ silentValidation: true });
+                }
+            });
             document.getElementById('iinInput')?.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -1776,6 +1862,35 @@ const Pages = {
             document.getElementById('addManualPersonBtn')?.addEventListener('click', () => this.addManualPerson());
             document.getElementById('addNonresidentBtn')?.addEventListener('click', () => this.addNonresident());
             document.getElementById('addManualPersonsBatchBtn')?.addEventListener('click', () => this.addManualPersonsBatch());
+            document.getElementById('downloadNonresidentConsentBtn')?.addEventListener('click', () => this.downloadNonresidentConsentForm());
+            document.getElementById('nonresidentConsentFileInput')?.addEventListener('change', (e) => this.handleNonresidentConsentUpload(e));
+
+            document.getElementById('sportTypeSelect')?.addEventListener('change', (e) => {
+                App.contractForm.sportType = e.target.value || '';
+                this.updateReview();
+            });
+
+            document.getElementById('corpClientCompanyInput')?.addEventListener('input', (e) => {
+                App.contractForm.corporateClientCompany = e.target.value || '';
+                this.updateReview();
+            });
+            document.getElementById('corpDiscountInput')?.addEventListener('input', (e) => {
+                const discount = Number(e.target.value);
+                App.contractForm.corporateDiscountPercent = Number.isFinite(discount) ? Math.max(0, Math.min(100, discount)) : 0;
+                this.updateReview();
+            });
+            document.getElementById('corpDmsContractInput')?.addEventListener('input', (e) => {
+                App.contractForm.corporateDmsNumber = e.target.value || '';
+                this.updateReview();
+            });
+            document.getElementById('corpCardInput')?.addEventListener('input', (e) => {
+                App.contractForm.corporateCardNumber = e.target.value || '';
+                this.updateReview();
+            });
+            document.getElementById('corpAllianceCheckbox')?.addEventListener('change', (e) => {
+                App.contractForm.corporateAlliance = !!e.target.checked;
+                this.updateReview();
+            });
 
             // Save draft
             document.getElementById('saveDraftBtn')?.addEventListener('click', () => this.saveDraft());
@@ -1970,8 +2085,10 @@ const Pages = {
                 docType: base.docType || 'manual',
                 docNumber: base.docNumber || '',
                 residency: base.residency || 'resident',
-                verificationMode: base.verificationMode || 'resident_no_iin',
-                kdpStatus: base.kdpStatus || 'not_required',
+                verificationMode: base.verificationMode || (Utils.validateIIN(String(base.iin || '')) ? 'iin_kdp' : 'resident_no_iin'),
+                kdpStatus: base.kdpStatus || (Utils.validateIIN(String(base.iin || '')) ? 'confirmed' : 'not_required'),
+                paperConsentUploaded: !!base.paperConsentUploaded,
+                consentFileName: base.consentFileName || '',
                 isCalculatedOnly: !!base.isCalculatedOnly
             };
         },
@@ -2009,14 +2126,19 @@ const Pages = {
             };
         },
 
-        async lookupIIN() {
+        async lookupIIN(options = {}) {
+            if (this.iinLookupInProgress) return;
             const iin = document.getElementById('iinInput')?.value;
             if (!Utils.validateIIN(iin)) {
-                Toast.error('Некорректный ИИН (должен содержать 12 цифр)');
+                if (!options.silentValidation) {
+                    Toast.error('Некорректный ИИН (должен содержать 12 цифр)');
+                }
                 return;
             }
             if (App.contractForm.persons.some(person => String(person.iin) === iin)) {
-                Toast.warning('Застрахованный с таким ИИН уже добавлен');
+                if (!options.silentValidation) {
+                    Toast.warning('Застрахованный с таким ИИН уже добавлен');
+                }
                 return;
             }
 
@@ -2024,54 +2146,60 @@ const Pages = {
                 Toast.error(`Максимум ${App.settings.maxPersons} застрахованных`);
                 return;
             }
+            this.iinLookupInProgress = true;
 
             const requestBtn = document.getElementById('requestKdpBtn');
             const requestBtnLabel = requestBtn?.querySelector('.action-inline-btn-label');
-            if (requestBtn) {
-                requestBtn.disabled = true;
-                if (requestBtnLabel) requestBtnLabel.textContent = 'Ожидание КДП...';
-            }
+            try {
+                if (requestBtn) {
+                    requestBtn.disabled = true;
+                    if (requestBtnLabel) requestBtnLabel.textContent = 'Ожидание КДП...';
+                }
 
-            Toast.info('Запрашиваем КДП. После подтверждения автоматически запрашиваем данные из госбазы...');
-            const kdpApproved = await this.requestKDP({ fromIinFlow: true });
-            if (!kdpApproved) {
-                Toast.error('Не удалось подтвердить КДП. Добавление застрахованного отменено');
+                if (this.isCorporateKdpBypassEnabled()) {
+                    Toast.info('Для корпоративного сертификата КДП не требуется. Запрашиваем данные из госбазы...');
+                } else {
+                    Toast.info('Запрашиваем КДП. После подтверждения автоматически запрашиваем данные из госбазы...');
+                }
+                const kdpApproved = await this.requestKDP({ fromIinFlow: true });
+                if (!kdpApproved) {
+                    Toast.error('Не удалось подтвердить КДП. Добавление застрахованного отменено');
+                    return;
+                }
+
+                if (!this.isCorporateKdpBypassEnabled()) {
+                    Toast.info('КДП получено. Запрашиваем данные из госбазы...');
+                }
+                // Mock ESBD lookup after KDP confirmation
+                const person = MockData.esbdDatabase[iin];
+                if (person) {
+                    App.contractForm.persons.push(this.buildPersonCardPayload({
+                        iin,
+                        ...person,
+                        residency: 'resident',
+                        verificationMode: 'iin_kdp',
+                        kdpStatus: 'confirmed',
+                        isCalculatedOnly: false
+                    }));
+                    this.renderPersons();
+                    this.updateReview();
+                    document.getElementById('iinInput').value = '';
+                    AuditLog.add('esbd_lookup', 'person', iin, 'Запрос данных из ЕСБД');
+                    Toast.success('Данные получены из ЕСБД');
+                } else {
+                    const randomPerson = this.generateRandomKazakhPerson(iin);
+                    App.contractForm.persons.push(this.buildPersonCardPayload(randomPerson));
+                    this.renderPersons();
+                    this.updateReview();
+                    document.getElementById('iinInput').value = '';
+                    Toast.info('Лицо добавлено');
+                }
+            } finally {
                 if (requestBtn) {
                     requestBtn.disabled = false;
                     if (requestBtnLabel) requestBtnLabel.textContent = 'Запросить КДП';
                 }
-                return;
-            }
-
-            Toast.info('КДП получено. Запрашиваем данные из госбазы...');
-            // Mock ESBD lookup after KDP confirmation
-            const person = MockData.esbdDatabase[iin];
-            if (person) {
-                App.contractForm.persons.push(this.buildPersonCardPayload({
-                    iin,
-                    ...person,
-                    residency: 'resident',
-                    verificationMode: 'iin_kdp',
-                    kdpStatus: 'confirmed',
-                    isCalculatedOnly: false
-                }));
-                this.renderPersons();
-                this.updateReview();
-                document.getElementById('iinInput').value = '';
-                AuditLog.add('esbd_lookup', 'person', iin, 'Запрос данных из ЕСБД');
-                Toast.success('Данные получены из ЕСБД');
-            } else {
-                const randomPerson = this.generateRandomKazakhPerson(iin);
-                App.contractForm.persons.push(this.buildPersonCardPayload(randomPerson));
-                this.renderPersons();
-                this.updateReview();
-                document.getElementById('iinInput').value = '';
-                Toast.info('Лицо добавлено');
-            }
-
-            if (requestBtn) {
-                requestBtn.disabled = false;
-                if (requestBtnLabel) requestBtnLabel.textContent = 'Запросить КДП';
+                this.iinLookupInProgress = false;
             }
         },
 
@@ -2125,6 +2253,56 @@ const Pages = {
             Toast.success('Резидент без ИИН добавлен');
         },
 
+        downloadNonresidentConsentForm() {
+            const template = [
+                'БЛАНК СОГЛАСИЯ НА ОБРАБОТКУ ПЕРСОНАЛЬНЫХ ДАННЫХ (КДП)',
+                '',
+                '1. ФИО застрахованного: ___________________________',
+                '2. Дата рождения: ___________________________',
+                '3. Документ: ___________________________',
+                '4. Подтверждаю согласие на обработку персональных данных.',
+                '',
+                'Подпись: ____________________   Дата: ____________________'
+            ].join('\n');
+            const blob = new Blob([template], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `kdp_nonresident_form_${Utils.getToday()}.txt`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            Toast.success('Бланк согласия скачан');
+        },
+
+        handleNonresidentConsentUpload(event) {
+            const file = event?.target?.files?.[0];
+            if (!file) {
+                App.contractForm.nonresidentConsentFile = null;
+                return;
+            }
+            const maxFileSize = 15 * 1024 * 1024;
+            if (file.size > maxFileSize) {
+                Toast.error('Файл превышает 15 МБ');
+                event.target.value = '';
+                App.contractForm.nonresidentConsentFile = null;
+                return;
+            }
+            App.contractForm.nonresidentConsentFile = {
+                name: file.name,
+                size: file.size,
+                type: file.type || 'application/octet-stream',
+                uploadedAt: new Date().toISOString()
+            };
+            App.consentBank.unshift({
+                id: Utils.generateId('consent'),
+                contractDraftId: App.contractForm.id,
+                fileName: file.name,
+                size: file.size,
+                uploadedAt: new Date().toISOString()
+            });
+            Toast.success(`Файл загружен: ${file.name}`);
+            AuditLog.add('upload_consent', 'contract', App.contractForm.id, `Загружено согласие: ${file.name}`);
+        },
+
         addNonresident() {
             const fullName = document.getElementById('nonresidentNameInput')?.value?.trim() || '';
             const birthDate = Utils.getDateValue('nonresidentBirthDateInput');
@@ -2142,6 +2320,10 @@ const Pages = {
                 Toast.error('Укажите Фамилию и Имя');
                 return;
             }
+            if (!App.contractForm.nonresidentConsentFile) {
+                Toast.error('Загрузите подписанный бланк согласия для нерезидента');
+                return;
+            }
 
             if (!this.ensurePersonLimit(1)) return;
 
@@ -2154,12 +2336,17 @@ const Pages = {
                 residency: 'nonresident',
                 verificationMode: 'nonresident_min',
                 kdpStatus: 'not_required',
+                paperConsentUploaded: true,
+                consentFileName: App.contractForm.nonresidentConsentFile.name,
                 isCalculatedOnly: false
             }));
 
             const nameInput = document.getElementById('nonresidentNameInput');
             if (nameInput) nameInput.value = '';
             Utils.setDateValue('nonresidentBirthDateInput', '', { silent: true });
+            const fileInput = document.getElementById('nonresidentConsentFileInput');
+            if (fileInput) fileInput.value = '';
+            App.contractForm.nonresidentConsentFile = null;
             this.renderPersons();
             this.updateReview();
             Toast.success('Нерезидент добавлен');
@@ -2215,6 +2402,42 @@ const Pages = {
             return App.contractForm.persons.some(person => Utils.validateIIN(String(person.iin || '')));
         },
 
+        getSelectedGeneralContract() {
+            const company = Permissions.getCurrentCompany();
+            return company?.generalContracts?.find(gc => gc.id === App.contractForm.generalContractId) || null;
+        },
+
+        isCorporateBenefitsEnabled() {
+            const gc = this.getSelectedGeneralContract();
+            return !!(gc?.corporateBenefitsEnabled && Utils.isTravelProduct(App.contractForm.productType));
+        },
+
+        isCorporateDiscountApplied() {
+            if (!this.isCorporateBenefitsEnabled()) return false;
+            const f = App.contractForm;
+            return !!(
+                String(f.corporateClientCompany || '').trim() &&
+                String(f.corporateDmsNumber || '').trim() &&
+                Number(f.corporateDiscountPercent || 0) >= 0 &&
+                Number(f.corporateDiscountPercent || 0) <= 100
+            );
+        },
+
+        isCorporateBlockTouched() {
+            const f = App.contractForm;
+            return !!(
+                String(f.corporateClientCompany || '').trim() ||
+                String(f.corporateDmsNumber || '').trim() ||
+                String(f.corporateCardNumber || '').trim() ||
+                Number(f.corporateDiscountPercent || 0) > 0 ||
+                f.corporateAlliance
+            );
+        },
+
+        isCorporateKdpBypassEnabled() {
+            return this.isCorporateDiscountApplied();
+        },
+
         getPersonVerificationLabel(person) {
             if (person.verificationMode === 'iin_kdp') return 'ИИН + КДП';
             if (person.verificationMode === 'resident_no_iin') return 'Без ИИН';
@@ -2227,15 +2450,17 @@ const Pages = {
             const hasName = !!(person.lastName && person.firstName);
             const hasBirthDate = !!person.birthDate;
             const ageGroup = this.getAgeGroupByBirthDate(person.birthDate);
+            const corporateKdpBypass = this.isCorporateKdpBypassEnabled();
 
             if (person.verificationMode === 'iin_kdp') {
+                if (corporateKdpBypass) return Utils.validateIIN(String(person.iin || ''));
                 return Utils.validateIIN(String(person.iin || '')) && person.kdpStatus === 'confirmed';
             }
             if (person.verificationMode === 'resident_no_iin') {
                 return hasName && hasBirthDate && (ageGroup === 'u1' || ageGroup === 'o64');
             }
             if (person.verificationMode === 'nonresident_min') {
-                return hasName && hasBirthDate;
+                return hasName && hasBirthDate && !!person.paperConsentUploaded;
             }
             if (person.verificationMode === 'calculator') {
                 return hasBirthDate;
@@ -2257,14 +2482,20 @@ const Pages = {
             };
             const getResidencyLabel = (residency) => residency === 'nonresident' ? 'Нерезидент' : 'Резидент';
             const isNoIin = (person) => !Utils.validateIIN(String(person.iin || ''));
+            const corporateBypass = this.isCorporateKdpBypassEnabled();
             const getDetails = (person) => {
                 if (person.verificationMode === 'iin_kdp') {
+                    if (corporateBypass) return 'Корпоративный сертификат: КДП по ИИН не требуется';
                     return person.kdpStatus === 'confirmed'
                         ? 'КДП подтверждено, данные готовы к оформлению'
                         : 'Ожидается подтверждение КДП';
                 }
                 if (person.verificationMode === 'resident_no_iin') return 'Резидент без ИИН. Добавлен по возрастному исключению';
-                if (person.verificationMode === 'nonresident_min') return 'Нерезидент. КДП и ИИН не требуются';
+                if (person.verificationMode === 'nonresident_min') {
+                    return person.paperConsentUploaded
+                        ? `Нерезидент. Бумажное согласие загружено (${person.consentFileName || 'файл'})`
+                        : 'Нерезидент. Требуется загрузка бумажного согласия';
+                }
                 return 'Расчётная запись из калькулятора';
             };
 
@@ -2279,7 +2510,8 @@ const Pages = {
                             <span class="person-pill person-pill-source">${this.getPersonVerificationLabel(p)}</span>
                             <span class="person-pill ${isNoIin(p) ? 'person-pill-no-iin' : ''}">${Utils.validateIIN(String(p.iin || '')) ? `ИИН: ${p.iin}` : 'Без ИИН'}</span>
                             <span class="person-pill">${Utils.formatDate(p.birthDate)}</span>
-                            ${p.verificationMode === 'iin_kdp'
+                            <span class="person-pill person-pill-premium">Премия: ${Utils.formatCurrency(p.calculatedPremium || 0)}</span>
+                            ${p.verificationMode === 'iin_kdp' && !corporateBypass
                                 ? `<span class="person-pill ${p.kdpStatus === 'confirmed' ? 'person-pill-kdp-ok' : 'person-pill-kdp-pending'}">${p.kdpStatus === 'confirmed' ? 'КДП подтверждено' : 'КДП не подтверждено'}</span>`
                                 : ''}
                         </div>
@@ -2318,6 +2550,10 @@ const Pages = {
                 return Promise.resolve(true);
             }
 
+            if (this.isCorporateKdpBypassEnabled()) {
+                return Promise.resolve(true);
+            }
+
             Toast.info('Отправка SMS с запросом КДП...');
             AuditLog.add('request_kdp', 'contract', App.contractForm.id, 'Запрос КДП по SMS');
 
@@ -2334,6 +2570,41 @@ const Pages = {
             });
         },
 
+        getSportRateFactor() {
+            if (!(App.contractForm.purpose === 'sport' && Utils.isTravelProduct(App.contractForm.productType))) return 1;
+            const sportType = MockData.sportTypes.find(item => item.id === App.contractForm.sportType);
+            return sportType?.rateFactor || 1.15;
+        },
+
+        getPersonRiskFactor(person) {
+            const ageGroup = this.getAgeGroupByBirthDate(person.birthDate);
+            let factor = 1;
+            if (ageGroup === 'u1') factor *= 1.45;
+            if (ageGroup === 'o64') factor *= 1.4;
+            if (person.residency === 'nonresident') factor *= 1.08;
+            if (person.verificationMode === 'calculator') factor *= 1.05;
+            return factor;
+        },
+
+        calculatePremiumBreakdown() {
+            const f = App.contractForm;
+            const basePremium = Utils.isTravelProduct(f.productType) ? 5000 : 3000;
+            const amountMultiplier = (f.amount || 10000) / 10000;
+            const days = Utils.daysBetween(f.startDate, f.endDate) || 1;
+            const countryRule = this.resolveCountryRules();
+            const usdRate = CurrencyTicker.rates.USD.rate;
+            const productRate = Utils.isTravelProduct(f.productType) ? usdRate * 1.03 : usdRate;
+            const sportFactor = this.getSportRateFactor();
+            const discountFactor = this.isCorporateDiscountApplied()
+                ? Math.max(0, 1 - (Number(f.corporateDiscountPercent || 0) / 100))
+                : 1;
+
+            const unit = basePremium * amountMultiplier * (days / 7) * countryRule.rateFactor * (productRate / 475) * sportFactor * discountFactor;
+            const perPerson = f.persons.map(person => Math.round(unit * this.getPersonRiskFactor(person)));
+            const total = perPerson.reduce((sum, value) => sum + value, 0);
+            return { total, perPerson };
+        },
+
         updateReview() {
             const f = App.contractForm;
             this.applyCountryRules();
@@ -2346,7 +2617,9 @@ const Pages = {
                 document.getElementById('reviewAmountRow')?.classList.remove('hidden');
                 const prog = MockData.programs.find(p => p.id === f.program);
                 const variant = MockData.programVariants.find(v => v.id === f.variant);
-                document.getElementById('reviewProgram').textContent = `${prog?.name || '-'} / ${variant?.name || '-'}`;
+                const sportType = MockData.sportTypes.find(s => s.id === f.sportType);
+                const sportText = f.purpose === 'sport' && sportType ? ` / ${sportType.name}` : '';
+                document.getElementById('reviewProgram').textContent = `${prog?.name || '-'} / ${variant?.name || '-'}${sportText}`;
                 document.getElementById('reviewAmount').textContent =
                     MockData.insuranceAmounts.find(a => a.value == f.amount && a.currency === (f.amountCurrency || 'USD'))?.label ||
                     `${Number(f.amount || 0).toLocaleString('ru-RU')} ${f.amountCurrency || 'USD'}`;
@@ -2358,27 +2631,31 @@ const Pages = {
             document.getElementById('reviewPeriod').textContent = f.startDate && f.endDate ? `${Utils.formatDate(f.startDate)} - ${Utils.formatDate(f.endDate)}` : '-';
             document.getElementById('reviewPersons').textContent = f.persons.length;
 
+            const corporateBypass = this.isCorporateKdpBypassEnabled();
             const requiresKdp = f.persons.some(person => person.verificationMode === 'iin_kdp');
             const allKdpConfirmed = !requiresKdp || f.persons
                 .filter(person => person.verificationMode === 'iin_kdp')
-                .every(person => person.kdpStatus === 'confirmed');
-            f.kdpConfirmed = allKdpConfirmed;
-            const kdpBadge = !requiresKdp
+                .every(person => person.kdpStatus === 'confirmed' || corporateBypass);
+            f.kdpConfirmed = allKdpConfirmed || corporateBypass;
+            const kdpBadge = corporateBypass
+                ? '<span class="badge badge-info">Не требуется (корп. скидка)</span>'
+                : !requiresKdp
                 ? '<span class="badge badge-info">Не требуется</span>'
                 : allKdpConfirmed
                     ? '<span class="badge badge-success">Получено</span>'
                     : '<span class="badge badge-error">Требуется</span>';
             document.getElementById('reviewKdp').innerHTML = kdpBadge;
 
-            // Calculate mock premium
-            const basePremium = Utils.isTravelProduct(f.productType) ? 5000 : 3000;
-            const amountMultiplier = (f.amount || 10000) / 10000;
-            const days = Utils.daysBetween(f.startDate, f.endDate) || 1;
-            const personMultiplier = Math.max(1, f.persons.length);
-            const countryRule = this.resolveCountryRules();
-            const usdRate = CurrencyTicker.rates.USD.rate;
-            const productRate = Utils.isTravelProduct(f.productType) ? usdRate * 1.03 : usdRate;
-            const premium = Math.round(basePremium * amountMultiplier * (days / 7) * personMultiplier * countryRule.rateFactor * (productRate / 475));
+            // Calculate premium breakdown (per person + total)
+            const premiumBreakdown = this.calculatePremiumBreakdown();
+            const premium = premiumBreakdown.total;
+            f.persons = f.persons.map((person, index) => ({
+                ...person,
+                calculatedPremium: premiumBreakdown.perPerson[index] || 0
+            }));
+            if (document.getElementById('personsContainer')) {
+                this.renderPersons();
+            }
             App.contractForm.premium = premium;
             document.getElementById('reviewPremium').textContent = Utils.formatCurrency(premium);
 
@@ -2419,16 +2696,19 @@ const Pages = {
             const f = App.contractForm;
             const hasInvalidPersons = f.persons.some(person => !this.isPersonReadyForActivation(person));
             const hasUnconfirmedIinKdp = f.persons.some(person => person.verificationMode === 'iin_kdp' && person.kdpStatus !== 'confirmed');
+            const corporateBypass = this.isCorporateKdpBypassEnabled();
+            const corporateTouchedInvalid = this.isCorporateBenefitsEnabled() && this.isCorporateBlockTouched() && !this.isCorporateDiscountApplied();
 
             // Validation
             if (!f.generalContractId) { Toast.error('Для выбранного продукта отсутствует генеральный договор'); return; }
             if (f.territories.length === 0) { Toast.error('Выберите территорию'); return; }
             if (f.persons.length === 0) { Toast.error('Добавьте застрахованных'); return; }
+            if (corporateTouchedInvalid) { Toast.error('Заполните корпоративные поля полностью (компания, номер ДМС, размер скидки)'); return; }
             if (hasInvalidPersons) { Toast.error('Проверьте данные застрахованных лиц'); return; }
-            if (hasUnconfirmedIinKdp) { Toast.error('Подтвердите КДП для всех резидентов с ИИН'); return; }
+            if (hasUnconfirmedIinKdp && !corporateBypass) { Toast.error('Подтвердите КДП для всех резидентов с ИИН'); return; }
             if (!f.startDate || !f.endDate) { Toast.error('Укажите период страхования'); return; }
             if (f.startDate < Utils.getTomorrow()) { Toast.error('Дата начала должна быть не ранее следующего дня от даты выписки'); return; }
-            f.kdpConfirmed = !hasUnconfirmedIinKdp;
+            f.kdpConfirmed = corporateBypass || !hasUnconfirmedIinKdp;
 
             // Show loading
             document.getElementById('activationStatus')?.classList.remove('hidden');
@@ -2457,6 +2737,10 @@ const Pages = {
                 contract.activatedAt = Utils.getToday();
                 contract.crmId = result.crmId;
                 contract.policyNumber = result.policyNumber;
+                contract.esbdSent = contract.premium > 0;
+                if (!contract.esbdSent) {
+                    AuditLog.add('esbd_skip_zero_premium', 'contract', contract.id, 'Нулевая премия: передача в ЕСБД не выполнялась');
+                }
 
                 App.contracts.unshift(contract);
 
@@ -2587,10 +2871,10 @@ const Pages = {
             const data = this.currentData || [];
             const maskSensitive = MockData.roles[App.currentRole]?.permissions.maskSensitive;
 
-            let csv = 'Дата,Номер,Тип,Компания,Статус,Премия\n';
+            let csv = 'Дата,Номер,Тип,Компания,Статус,Премия,КорпСкидка%,КлиентскаяКомпания,ДМС,Карта,Альянс,ПереданоЕСБД\n';
             data.forEach(c => {
                 const company = MockData.tourCompanies.find(tc => tc.id === c.companyId);
-                csv += `${c.createdAt},${c.policyNumber || c.id},${c.type},${company?.name || ''},${c.status},${c.premium || 0}\n`;
+                csv += `${c.createdAt},${c.policyNumber || c.id},${c.type},${company?.name || ''},${c.status},${c.premium || 0},${c.corporateDiscountPercent || 0},"${c.corporateClientCompany || ''}","${c.corporateDmsNumber || ''}","${c.corporateCardNumber || ''}",${c.corporateAlliance ? 'Да' : 'Нет'},${c.esbdSent === false ? 'Нет' : 'Да'}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -2618,7 +2902,13 @@ const Pages = {
                     type: c.type,
                     company: company?.name,
                     status: c.status,
-                    premium: c.premium
+                    premium: c.premium,
+                    corporateDiscountPercent: c.corporateDiscountPercent || 0,
+                    corporateClientCompany: c.corporateClientCompany || '',
+                    corporateDmsNumber: c.corporateDmsNumber || '',
+                    corporateCardNumber: c.corporateCardNumber || '',
+                    corporateAlliance: !!c.corporateAlliance,
+                    esbdSent: c.esbdSent !== false
                 };
             });
 
