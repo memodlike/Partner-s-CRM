@@ -1726,15 +1726,34 @@ const Pages = {
             document.getElementById('sportTypeGroup')?.classList.toggle('hidden', !(App.contractForm.purpose === 'sport' && Utils.isTravelProduct(App.contractForm.productType)));
 
             const corpClientInput = document.getElementById('corpClientCompanyInput');
-            if (corpClientInput) corpClientInput.value = App.contractForm.corporateClientCompany || '';
+            if (corpClientInput) {
+                corpClientInput.value = App.contractForm.corporateClientCompany || '';
+                corpClientInput.disabled = false;
+                corpClientInput.readOnly = false;
+            }
             const corpDiscountInput = document.getElementById('corpDiscountInput');
-            if (corpDiscountInput) corpDiscountInput.value = Number(App.contractForm.corporateDiscountPercent || 0);
+            if (corpDiscountInput) {
+                corpDiscountInput.value = Number(App.contractForm.corporateDiscountPercent || 0);
+                corpDiscountInput.disabled = false;
+                corpDiscountInput.readOnly = false;
+            }
             const corpDmsInput = document.getElementById('corpDmsContractInput');
-            if (corpDmsInput) corpDmsInput.value = App.contractForm.corporateDmsNumber || '';
+            if (corpDmsInput) {
+                corpDmsInput.value = App.contractForm.corporateDmsNumber || '';
+                corpDmsInput.disabled = false;
+                corpDmsInput.readOnly = false;
+            }
             const corpCardInput = document.getElementById('corpCardInput');
-            if (corpCardInput) corpCardInput.value = App.contractForm.corporateCardNumber || '';
+            if (corpCardInput) {
+                corpCardInput.value = App.contractForm.corporateCardNumber || '';
+                corpCardInput.disabled = false;
+                corpCardInput.readOnly = false;
+            }
             const corpAllianceCheckbox = document.getElementById('corpAllianceCheckbox');
-            if (corpAllianceCheckbox) corpAllianceCheckbox.checked = !!App.contractForm.corporateAlliance;
+            if (corpAllianceCheckbox) {
+                corpAllianceCheckbox.checked = !!App.contractForm.corporateAlliance;
+                corpAllianceCheckbox.disabled = false;
+            }
 
             CustomSelect.syncWithin(document.getElementById('mainContent'));
         },
